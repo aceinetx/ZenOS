@@ -3,15 +3,6 @@
 version = 4
 
 [[package]]
-name = "ZenOS"
-version = "0.1.0"
-dependencies = [
- "log",
- "uefi",
- "uefi-services",
-]
-
-[[package]]
 name = "bit_field"
 version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -163,3 +154,12 @@ name = "unicode-ident"
 version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f63a545481291138910575129486daeaf8ac54aee4387fe7906919f7830c7d9d"
+
+[[package]]
+name = "zen_os"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "uefi",
+ "uefi-services",
+]
