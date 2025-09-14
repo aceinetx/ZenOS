@@ -1,8 +1,7 @@
-use crate::globals;
-use crate::io;
+use crate::mem::alloc;
 use crate::text;
 
-use uefi_services::*;
+use uefi_services::println;
 
 pub fn zen_main() -> Result<(), &'static str> {
     for x in 0..50 {
@@ -14,12 +13,13 @@ pub fn zen_main() -> Result<(), &'static str> {
         text::set_char(50, y, '#');
     }
 
+    let mut allocator = alloc::Allocator::new(0x1000000, 0x2000000);
     println!("");
-    loop {
-        let key = io::get_char();
-        println!("{:?}", key);
+    for _ in 0..10 {
+        let ptr = allocator.alloc::<i32>(10);
+        println!("{:x}", ptr as usize);
+        allocator.free::<i32>(ptr);
     }
 
-    //return Err("Ok");
     Ok(())
 }
