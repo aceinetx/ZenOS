@@ -1,4 +1,5 @@
 use crate::globals;
+use crate::io;
 use crate::text;
 
 use uefi_services::*;
@@ -11,6 +12,12 @@ pub fn zen_main() -> Result<(), &'static str> {
     for y in 0..25 {
         text::set_char(0, y, '#');
         text::set_char(50, y, '#');
+    }
+
+    println!("");
+    loop {
+        let key = io::get_char();
+        println!("{:?}", key);
     }
 
     //return Err("Ok");
