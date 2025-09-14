@@ -1,11 +1,16 @@
+use uefi_services::println;
+
+#[derive(Debug)]
 struct BlockHeader {
     size: usize,
 }
 
+#[derive(Debug)]
 struct BlockFooter {
     size: usize,
 }
 
+#[derive(Debug)]
 struct FreeBlock {
     header: BlockHeader,
     next: *mut FreeBlock,
@@ -13,10 +18,12 @@ struct FreeBlock {
     // Footer is at the end of the block
 }
 
+#[derive(Debug)]
 pub struct Allocator {
     start: *mut (),
     end: *mut (),
     free_list_head: *mut FreeBlock,
+    alloc_diff: i32, // allocation difference, increment on alloc, decrement on free
 }
 
 impl Allocator {
@@ -25,6 +32,7 @@ impl Allocator {
             start: start as *mut (),
             end: (start + size) as *mut (),
             free_list_head: start as *mut FreeBlock,
+            alloc_diff: 0,
         };
         unsafe {
             (*(start as *mut BlockHeader)).size = size;
@@ -40,10 +48,25 @@ impl Allocator {
         (size + align - 1) & !(align - 1)
     }
 
-    pub fn alloc<T>(&mut self, _size: usize) -> *mut T {
+    pub fn alloc<T>(&mut self) -> *mut T {
+        self.alloc_raw(size_of::<T>())
+    }
+
+    fn inc_diff(&mut self) {
+        self.alloc_diff += 1;
+        println!("increment alloc_diff, now {}", self.alloc_diff);
+    }
+
+    fn dec_diff(&mut self) {
+        self.alloc_diff -= 1;
+        println!("decrement alloc_diff, now {}", self.alloc_diff);
+    }
+
+    pub fn alloc_raw<T>(&mut self, _size: usize) -> *mut T {
         unsafe {
             // Align to 8 bytes
             let size = self.align(_size, 8);
+            println!("requested alloc of {} (aligned) bytes", _size);
             let total_needed = size_of::<BlockHeader>() + size + size_of::<BlockFooter>();
             let mut best: *mut FreeBlock = 0 as *mut FreeBlock;
             let mut curr: *mut FreeBlock = self.free_list_head;
@@ -53,6 +76,7 @@ impl Allocator {
                 }
 
                 let curr_size = (*curr).header.size & !1;
+                //println!("{:?} {}", (*curr), total_needed);
                 if curr_size >= total_needed
                     && ((best as usize == 0) || curr_size < (*best).header.size)
                 {
@@ -62,6 +86,7 @@ impl Allocator {
             }
 
             if best as usize == 0 {
+                println!("alloc failed: no best block");
                 return 0 as *mut T;
             }
 
@@ -105,12 +130,19 @@ impl Allocator {
                 }
             }
 
-            return (best as usize + size_of::<BlockHeader>()) as *mut T;
+            let ptr = (best as usize + size_of::<BlockHeader>()) as *mut T;
+            println!("allocated: {:x}", ptr as usize);
+            self.inc_diff();
+            return ptr;
         }
     }
 
     pub fn free<T>(&mut self, ptr: *mut T) {
         unsafe {
+            println!(
+                "requested to free: {:x}, alloc_diff: {}",
+                ptr as usize, self.alloc_diff
+            );
             if ptr as usize == 0 {
                 return;
             }
@@ -167,6 +199,20 @@ impl Allocator {
                 (*self.free_list_head).prev = block;
             }
             self.free_list_head = block;
+
+            println!("freed: {:x}", ptr as usize);
+            self.dec_diff();
+        }
+    }
+
+    pub fn leak_check(&self) {
+        if self.alloc_diff > 0 {
+            println!(
+                "Allocator leak check failed with difference {}",
+                self.alloc_diff
+            );
+        } else {
+            println!("Allocator leak check succeeded with 0 difference",);
         }
     }
 }
