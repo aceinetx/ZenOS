@@ -115,7 +115,7 @@ impl Allocator {
                 return;
             }
 
-            let mut header = (ptr as usize + size_of::<BlockHeader>()) as *mut BlockHeader;
+            let mut header = (ptr as usize - size_of::<BlockHeader>()) as *mut BlockHeader;
             let mut size = (*header).size & !1;
             (*header).size &= !1;
             // Coalesce next
