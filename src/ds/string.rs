@@ -1,4 +1,5 @@
-use core::fmt::{Display, Formatter, Result};
+use core::fmt::{Debug, Display, Formatter, Result};
+use core::ops::{Index, IndexMut};
 
 use crate::ds::vec::Vec;
 
@@ -20,6 +21,40 @@ impl String {
         }
         return inst;
     }
+
+    pub fn push(&mut self, ch: char) {
+        self.vec.push(ch);
+    }
+
+    pub fn pop(&mut self) {
+        self.vec.pop();
+    }
+
+    pub fn is_empty(&self) -> bool {
+        return self.vec.is_empty();
+    }
+
+    pub fn get(&self, index: usize) -> &mut char {
+        return self.vec.get(index);
+    }
+
+    pub fn set(&mut self, index: usize, ch: char) {
+        self.vec.set(index, ch);
+    }
+
+    pub fn clear(&mut self) {
+        self.vec.clear();
+    }
+
+    pub fn len(&self) -> usize {
+        return self.vec.len();
+    }
+}
+
+impl Debug for String {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{:?}", self.vec)
+    }
 }
 
 impl Display for String {
@@ -31,5 +66,18 @@ impl Display for String {
             }
         }
         Ok(())
+    }
+}
+
+impl Index<usize> for String {
+    type Output = char;
+    fn index<'a>(&'a self, index: usize) -> &'a char {
+        return self.get(index);
+    }
+}
+
+impl IndexMut<usize> for String {
+    fn index_mut<'a>(&'a mut self, index: usize) -> &'a mut char {
+        return self.get(index);
     }
 }

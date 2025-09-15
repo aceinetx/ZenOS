@@ -1,5 +1,7 @@
 use uefi::proto::console::text::{Key, ScanCode};
+use uefi_services::print;
 
+use crate::ds::string::String;
 use crate::globals;
 
 pub fn get_char() -> Key {
@@ -19,4 +21,26 @@ pub fn get_char_unlocked() -> Key {
         }
     }
     return Key::Special(ScanCode::NULL);
+}
+
+pub fn get_string() -> String {
+    let mut string = String::new();
+    loop {
+        let key = get_char();
+        match key {
+            Key::Printable(key) => {
+                let mut ch: char = key.into();
+                if ch == '\r' {
+                    ch = '\n';
+                }
+                print!("{}", ch);
+                if ch == '\n' {
+                    break;
+                }
+                string.push(ch);
+            }
+            Key::Special(_) => {}
+        }
+    }
+    return string;
 }
