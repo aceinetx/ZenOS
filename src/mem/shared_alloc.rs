@@ -2,8 +2,6 @@ use core::alloc::Layout;
 use core::ptr::NonNull;
 use linked_list_allocator::*;
 
-use uefi_services::println;
-
 static ALLOCATOR: LockedHeap = LockedHeap::empty();
 
 pub fn alloc_bytes<T>(size: usize) -> *mut T {
