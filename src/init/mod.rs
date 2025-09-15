@@ -1,6 +1,6 @@
+use crate::ds::vec::Vec;
 use crate::text;
 
-use crate::ds::vec::Vec;
 use uefi_services::println;
 
 pub fn zen_main() -> Result<(), &'static str> {
@@ -13,9 +13,16 @@ pub fn zen_main() -> Result<(), &'static str> {
         text::set_char(50, y, '#');
     }
 
+    println!();
+
     let mut vec = Vec::<i32>::new();
     vec.push(1);
     vec.push(2);
+    vec.push(3);
+    vec.push(4);
+    for i in 0..vec.len() {
+        println!("{}", vec[i]);
+    }
 
     Ok(())
 }

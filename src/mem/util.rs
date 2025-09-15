@@ -38,3 +38,13 @@ pub unsafe fn memcpy<T>(src: *mut T, dest: *mut T, n: usize) {
         }
     }
 }
+
+pub unsafe fn memset<T>(ptr: *mut T, byte: u8, size: usize) {
+    unsafe {
+        // todo: make this faster
+        for i in 0..size {
+            let p = (ptr as usize + i) as *mut u8;
+            *p = byte;
+        }
+    }
+}
