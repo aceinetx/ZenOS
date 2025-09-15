@@ -12,7 +12,7 @@ pub fn alloc<T>() -> *mut T {
             .load(Ordering::Acquire)
             .as_mut()
             .unwrap()
-            .alloc::<T>();
+            .alloc();
     }
 }
 
@@ -22,7 +22,17 @@ pub fn free<T>(ptr: *mut T) {
             .load(Ordering::Acquire)
             .as_mut()
             .unwrap()
-            .free::<T>(ptr);
+            .free(ptr);
+    }
+}
+
+pub fn realloc<T>(ptr: *mut T, size: usize) -> *mut T {
+    unsafe {
+        return SHARED_ALLOCATOR
+            .load(Ordering::Acquire)
+            .as_mut()
+            .unwrap()
+            .realloc(ptr, size);
     }
 }
 

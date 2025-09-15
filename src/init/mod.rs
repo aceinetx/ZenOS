@@ -2,6 +2,7 @@ use crate::text;
 
 use crate::ds::vec::Vec;
 use uefi_services::println;
+
 pub fn zen_main() -> Result<(), &'static str> {
     for x in 0..50 {
         text::set_char(x, 0, '#');
@@ -12,17 +13,9 @@ pub fn zen_main() -> Result<(), &'static str> {
         text::set_char(50, y, '#');
     }
 
-    {
-        let mut vec = Vec::<i32>::new();
-        vec.push(1);
-        vec.push(2);
-    }
-
-    {
-        let mut vec = Vec::<f64>::new();
-        vec.push(0.123);
-        vec.push(1.234);
-    }
+    let mut vec = Vec::<i32>::new();
+    vec.push(1);
+    vec.push(2);
 
     Ok(())
 }

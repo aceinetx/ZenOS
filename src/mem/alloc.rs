@@ -1,3 +1,4 @@
+use crate::mem;
 use uefi_services::println;
 
 #[derive(Debug)]
@@ -54,18 +55,18 @@ impl Allocator {
         (size + align - 1) & !(align - 1)
     }
 
-    pub fn alloc<T>(&mut self) -> *mut T {
-        self.alloc_raw(size_of::<T>())
-    }
-
     fn inc_diff(&mut self) {
         self.alloc_diff += 1;
-        println!("increment alloc_diff, now {}", self.alloc_diff);
+        //println!("increment alloc_diff, now {}", self.alloc_diff);
     }
 
     fn dec_diff(&mut self) {
         self.alloc_diff -= 1;
-        println!("decrement alloc_diff, now {}", self.alloc_diff);
+        //println!("decrement alloc_diff, now {}", self.alloc_diff);
+    }
+
+    pub fn alloc<T>(&mut self) -> *mut T {
+        self.alloc_raw(size_of::<T>())
     }
 
     pub fn alloc_raw<T>(&mut self, _size: usize) -> *mut T {
@@ -82,7 +83,7 @@ impl Allocator {
                 }
 
                 let curr_size = (*curr).header.size & !ALLOCATED;
-                println!("{:?} {:x} {}", (*curr), best as usize, total_needed);
+                //println!("{:?} {:x} {}", (*curr), best as usize, total_needed);
                 if curr_size >= total_needed
                     && ((best as usize == 0) || curr_size < (*best).header.size)
                 {
@@ -178,6 +179,7 @@ impl Allocator {
             if prev_footer as usize >= self.start as usize {
                 let prev = (prev_footer as usize - ((*prev_footer).size & !ALLOCATED)
                     + size_of::<BlockFooter>()) as *mut BlockHeader;
+
                 if (*prev).size & ALLOCATED == 0 {
                     size += (*prev).size & !ALLOCATED;
                     let prev_block = prev as *mut FreeBlock;
@@ -208,6 +210,17 @@ impl Allocator {
 
             println!("freed: {:x}", ptr as usize);
             self.dec_diff();
+        }
+    }
+
+    pub fn realloc<T>(&mut self, ptr: *mut T, size: usize) -> *mut T {
+        unsafe {
+            let new = self.alloc_raw::<T>(size);
+            if ptr as usize != 0 {
+                mem::util::memcpy(ptr, new, size);
+                self.free::<T>(ptr);
+            }
+            return new;
         }
     }
 
