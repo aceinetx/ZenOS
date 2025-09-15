@@ -12,11 +12,17 @@ pub fn zen_main() -> Result<(), &'static str> {
         text::set_char(50, y, '#');
     }
 
-    let mut vec = Vec::<i32>::new();
-    vec.push(1);
-    vec.push(2);
-    vec.pop();
-    vec.pop();
+    {
+        let mut vec = Vec::<i32>::new();
+        vec.push(1);
+        vec.push(2);
+    }
+
+    {
+        let mut vec = Vec::<f64>::new();
+        vec.push(0.123);
+        vec.push(1.234);
+    }
 
     Ok(())
 }
