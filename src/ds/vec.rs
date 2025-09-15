@@ -3,6 +3,7 @@ use crate::mem::shared_alloc::*;
 
 use core::ops::{Index, IndexMut};
 
+#[derive(Debug)]
 pub struct Vec<T> {
     data: *mut T,
     length: usize,

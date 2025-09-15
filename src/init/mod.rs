@@ -1,4 +1,4 @@
-use crate::ds::vec::Vec;
+use crate::ds::*;
 use crate::text;
 
 use uefi_services::println;
@@ -15,14 +15,8 @@ pub fn zen_main() -> Result<(), &'static str> {
 
     println!();
 
-    let mut vec = Vec::<i32>::new();
-    vec.push(1);
-    vec.push(2);
-    vec.push(3);
-    vec.push(4);
-    for i in 0..vec.len() {
-        println!("{}", vec[i]);
-    }
+    let s = string::String::from("Hello, World!");
+    println!("{}", s);
 
     Ok(())
 }
