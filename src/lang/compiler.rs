@@ -1,11 +1,15 @@
-use crate::ds::string::String;
-use crate::ds::vec::Vec;
+use crate::ds::string::*;
+use crate::ds::vec::*;
 use crate::lang::tokenizer::{Token, Tokenizer};
 use uefi_services::println;
 
 pub struct Compiler<'a> {
     tokenizer: &'a mut Tokenizer,
     bytes: Vec<u8>,
+    header: Vec<u8>,
+    text: Vec<u8>,
+    data: Vec<u8>,
+    symtab_addr: usize,
 }
 
 impl<'a> Compiler<'_> {
@@ -13,26 +17,57 @@ impl<'a> Compiler<'_> {
         let mut inst = Compiler {
             tokenizer: tokenizer,
             bytes: Vec::new(),
+            header: Vec::new(),
+            text: Vec::new(),
+            data: Vec::new(),
+            symtab_addr: 0,
         };
         inst.add_header();
 
         return inst;
     }
 
-    pub fn get_bytes(&self) -> &Vec<u8> {
+    pub fn get_bytes(&mut self) -> &Vec<u8> {
+        self.bytes.clear();
+        self.bytes.push_vec(&self.header);
+        self.bytes.push_vec(&self.text);
+        self.bytes.push_vec(&self.data);
         return &self.bytes;
     }
 
     fn add_header(&mut self) {
-        self.bytes.push_vec(&String::from("ZEN").bytes());
-        self.bytes.push(1);
+        self.header.push_vec(&String::from("ZEN").bytes());
+        self.header.push(1);
+
+        self.symtab_addr = self.header.len();
+
+        self.header
+            .push_vec(&self.symtab_addr.to_le_bytes().to_vec());
     }
 
-    pub fn compile(&mut self) {
+    pub fn parse_function(&mut self) -> Result<(), &'static str> {
+        let token = self.tokenizer.next();
+        if let Token::Identifier(name) = token {
+        } else {
+            return Err("expected identifier after fn");
+        }
+        Ok(())
+    }
+
+    pub fn compile(&mut self) -> Result<(), &'static str> {
         let mut token = self.tokenizer.next();
         while !matches!(token, Token::EOF) {
             println!("tkn: {:?}", token);
+            match token {
+                Token::Fn => {
+                    if let Err(e) = self.parse_function() {
+                        return Err(e);
+                    }
+                }
+                _ => {}
+            }
             token = self.tokenizer.next();
         }
+        Ok(())
     }
 }

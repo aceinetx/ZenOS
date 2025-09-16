@@ -166,3 +166,27 @@ impl<T> Clone for Vec<T> {
         return new;
     }
 }
+
+pub trait ToVec {
+    fn to_vec(&self) -> Vec<u8>;
+}
+
+impl ToVec for [u8; 8] {
+    fn to_vec(&self) -> Vec<u8> {
+        let mut vec = Vec::<u8>::new();
+        for i in 0..self.len() {
+            vec.push(self[i]);
+        }
+        return vec;
+    }
+}
+
+impl ToVec for [u8; 4] {
+    fn to_vec(&self) -> Vec<u8> {
+        let mut vec = Vec::<u8>::new();
+        for i in 0..self.len() {
+            vec.push(self[i]);
+        }
+        return vec;
+    }
+}

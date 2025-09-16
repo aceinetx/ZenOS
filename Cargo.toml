@@ -9,3 +9,9 @@ uefi = "0.24"
 uefi-services = "0.21"
 libm = "0.2"
 linked_list_allocator = "0.10.5"
+
+[profile.dev]
+opt-level = 0          # no optimisation – easier to step through
+debug = true           # include full DWARF symbols
+debug-assertions = true
+overflow-checks = true
