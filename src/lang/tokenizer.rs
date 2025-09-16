@@ -8,12 +8,15 @@ pub struct Tokenizer {
 
 #[derive(Debug)]
 pub enum Token {
+    Fn,
+    Return,
     Number(f64),
     Identifier(String),
     String(String),
     Operator(char),
     Lbrace,
     Rbrace,
+    Semicolon,
     EOF,
 }
 
@@ -72,11 +75,16 @@ impl Tokenizer {
             let c = self.code[self.pos];
             if self.is_digit(c) {
                 let token = self.number();
-                self.pos += 1;
                 return token;
             } else if self.is_letter(c) {
-                let token = self.identifier();
-                self.pos += 1;
+                let mut token = self.identifier();
+                if let Token::Identifier(ref name) = token {
+                    if name == "fn" {
+                        token = Token::Fn;
+                    } else if name == "return" {
+                        token = Token::Return;
+                    }
+                }
                 return token;
             } else if c == '{' {
                 self.pos += 1;
@@ -84,6 +92,9 @@ impl Tokenizer {
             } else if c == '}' {
                 self.pos += 1;
                 return Token::Rbrace;
+            } else if c == ';' {
+                self.pos += 1;
+                return Token::Semicolon;
             }
             self.pos += 1;
         }

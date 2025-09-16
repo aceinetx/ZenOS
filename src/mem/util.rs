@@ -1,3 +1,5 @@
+use crate::mem::shared_alloc::*;
+
 pub unsafe fn memcpy<T>(src: *mut T, dest: *mut T, n: usize) {
     unsafe {
         let mut current_chunk_size = 8;
@@ -46,5 +48,29 @@ pub unsafe fn memset<T>(ptr: *mut T, byte: u8, size: usize) {
             let p = (ptr as usize + i) as *mut u8;
             *p = byte;
         }
+    }
+}
+
+pub unsafe fn memcmp(a: *const u8, b: *const u8, len: usize) -> i32 {
+    unsafe {
+        let mut i = 0;
+        while i < len {
+            let av = *a.add(i);
+            let bv = *b.add(i);
+            if av != bv {
+                // Cast to i32 to match C's `memcmp` sign convention.
+                return av as i32 - bv as i32;
+            }
+            i += 1;
+        }
+        0
+    }
+}
+
+pub unsafe fn memdup<T>(src: *mut T, size: usize) -> *mut T {
+    unsafe {
+        let new = alloc_bytes::<T>(size);
+        memcpy(src, new, size);
+        return new;
     }
 }

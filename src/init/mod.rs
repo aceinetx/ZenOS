@@ -8,10 +8,11 @@ pub fn zen_main() -> Result<(), &'static str> {
 
     let code = String::from("fn main { return 123; }");
     let mut tokenizer = tokenizer::Tokenizer::new(code);
-    let mut token = tokenizer.next();
-    while matches!(token, tokenizer::Token::EOF) {
-        println!("{:?}", token);
-        token = tokenizer.next();
+    let mut compiler = compiler::Compiler::new(&mut tokenizer);
+    compiler.compile();
+    let bytes = compiler.get_bytes();
+    for i in 0..bytes.len() {
+        println!("{:x}     {}", bytes[i], bytes[i] as char);
     }
 
     Ok(())

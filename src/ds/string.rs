@@ -1,3 +1,4 @@
+use core::cmp::PartialEq;
 use core::fmt::{Debug, Display, Formatter, Result};
 use core::ops::{Index, IndexMut};
 
@@ -34,8 +35,12 @@ impl String {
         return self.vec.is_empty();
     }
 
-    pub fn get(&self, index: usize) -> &mut char {
+    pub fn get(&self, index: usize) -> char {
         return self.vec.get(index);
+    }
+
+    pub fn get_ref(&self, index: usize) -> &mut char {
+        return self.vec.get_ref(index);
     }
 
     pub fn set(&mut self, index: usize, ch: char) {
@@ -49,11 +54,23 @@ impl String {
     pub fn len(&self) -> usize {
         return self.vec.len();
     }
+
+    pub fn chars(&self) -> &Vec<char> {
+        return &self.vec;
+    }
+
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut vec = Vec::<u8>::new();
+        for i in 0..self.len() {
+            vec.push(self.get(i) as u8);
+        }
+        return vec;
+    }
 }
 
 impl Debug for String {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{:?}", self.vec)
+        write!(f, "buffer=\"{}\"", self)
     }
 }
 
@@ -72,12 +89,24 @@ impl Display for String {
 impl Index<usize> for String {
     type Output = char;
     fn index<'a>(&'a self, index: usize) -> &'a char {
-        return self.get(index);
+        return self.get_ref(index);
     }
 }
 
 impl IndexMut<usize> for String {
     fn index_mut<'a>(&'a mut self, index: usize) -> &'a mut char {
-        return self.get(index);
+        return self.get_ref(index);
+    }
+}
+
+impl PartialEq for String {
+    fn eq(&self, other: &String) -> bool {
+        return self.vec == other.vec;
+    }
+}
+
+impl PartialEq<str> for String {
+    fn eq(&self, other: &str) -> bool {
+        return self.vec == String::from(other).vec;
     }
 }
