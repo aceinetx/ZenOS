@@ -1,0 +1,25 @@
+ZenOS
+=====
+x64 uefi rust operating system centered around it's own language
+
+! Designs below are not fully implemented, they are concepts and can change in the future !
+
+Design of ZenOS
+---------------
+Bottom layer: Rust kernel
+Middle layer: ZenLang Virtual Machine
+Top layer: ZenLang
+
+The lower the level, the more control over system you have.
+
+This design allows for tunable executable priveleges. For example, you can make certain executables run at kernel, or at user level
+
+Why are ZenLang VM and ZenLang seperate levels? The kernel controls the VM, kernel runs the executables, performs multithreading, ZenLang on the other hand does not do all of that. Joining these levels together would mean the kernel controls ZenLang itself, which is not what it does
+
+Design of ZenLang
+-----------------
+ZenLang code is compiled to series of functions of opcodes, which we call "modules".
+A module contains:
+- Module name
+- Functions and their opcodes and names
+- Global static strings
