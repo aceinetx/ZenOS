@@ -1,6 +1,5 @@
-use crate::ds::string::String;
 use crate::lang::*;
-
+use alloc::string::String;
 use uefi_services::*;
 
 pub fn zen_main() -> Result<(), &'static str> {

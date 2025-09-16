@@ -1,4 +1,4 @@
-use crate::ds::string::String;
+use alloc::string::String;
 
 #[derive(Debug)]
 pub struct Tokenizer {
@@ -40,7 +40,7 @@ impl Tokenizer {
     fn number(&mut self) -> Token {
         let mut num = 0.0;
         while self.pos < self.code.len() {
-            let c = self.code[self.pos];
+            let c = self.code.chars().nth(self.pos).unwrap();
             if !self.is_digit(c) {
                 break;
             }
@@ -57,7 +57,7 @@ impl Tokenizer {
     fn identifier(&mut self) -> Token {
         let mut identifier = String::new();
         while self.pos < self.code.len() {
-            let c = self.code[self.pos];
+            let c = self.code.chars().nth(self.pos).unwrap();
             if !self.is_identifier_letter(c) {
                 break;
             }
@@ -72,7 +72,7 @@ impl Tokenizer {
 
     pub fn next(&mut self) -> Token {
         while self.pos < self.code.len() {
-            let c = self.code[self.pos];
+            let c = self.code.chars().nth(self.pos).unwrap();
             if self.is_digit(c) {
                 let token = self.number();
                 return token;

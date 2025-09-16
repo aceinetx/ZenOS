@@ -1,8 +1,7 @@
+use crate::globals;
+use alloc::string::String;
 use uefi::proto::console::text::{Key, ScanCode};
 use uefi_services::print;
-
-use crate::ds::string::String;
-use crate::globals;
 
 pub fn get_char() -> Key {
     let mut key = Key::Special(ScanCode::NULL);
