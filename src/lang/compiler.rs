@@ -1,4 +1,5 @@
 use crate::lang::tokenizer::{Token, Tokenizer};
+use crate::lang::vm::*;
 use alloc::string::String;
 use alloc::vec::Vec;
 use uefi_services::println;
