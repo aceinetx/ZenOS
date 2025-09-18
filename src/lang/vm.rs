@@ -133,7 +133,6 @@ impl Module {
 
 pub struct VM<'a> {
     modules: Vec<&'a mut Module>,
-    shared_blocks: BlockArena,
     pc: usize,
     module_pc: usize,
     return_value: Value,
@@ -144,7 +143,6 @@ impl<'a> VM<'a> {
     pub fn new() -> VM<'a> {
         return VM {
             modules: Vec::new(),
-            shared_blocks: BlockArena::new(),
             pc: 0,
             module_pc: 0,
             return_value: Value::None,
@@ -201,7 +199,7 @@ impl<'a> VM<'a> {
             BlockValue::Boolean(flag) => {
                 return Value::Boolean(*flag);
             }
-            BlockValue::VarRef(flag) => {
+            BlockValue::VarRef(_) => {
                 todo!();
             }
         }
