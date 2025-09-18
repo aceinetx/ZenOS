@@ -205,6 +205,21 @@ impl<'a> VM<'a> {
         }
     }
 
+    fn determine_block_function_id(&self, block: &Block) -> Option<usize> {
+        if block.parent.is_none() {
+            if let BlockKind::Function { name: _ } = &block.kind {
+                return Some(block.id);
+            }
+            return None;
+        }
+        let result = self.modules[self.module_pc].get_block(block.parent.unwrap());
+        if let Ok(parent) = result {
+            return self.determine_block_function_id(parent);
+        }
+
+        return None;
+    }
+
     pub fn step(&mut self) -> bool {
         if self.module_pc >= self.modules.len() {
             return false;
@@ -215,6 +230,11 @@ impl<'a> VM<'a> {
             match &block.kind {
                 BlockKind::Return(value) => {
                     self.return_value = self.get_value_from_block_value(value);
+                    if let Some(func_id) = self.determine_block_function_id(block) {
+                        if func_id == self.entry_fn_id {
+                            self.module_pc = usize::MAX;
+                        }
+                    }
                 }
                 _ => {}
             }
