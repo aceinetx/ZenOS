@@ -13,8 +13,8 @@ pub fn zen_main() -> Result<(), &'static str> {
             println!("compilation error: {}", e);
         }
 
-        if let Ok(bytes) = compiler.get_bytes() {
-            println!("{:?}", compiler.get_module());
+        let module = compiler.get_module();
+        if let Ok(bytes) = module.compile() {
             for i in 0..bytes.len() {
                 let byte = bytes[i];
                 print!("{:x}     ", byte);
@@ -24,10 +24,21 @@ pub fn zen_main() -> Result<(), &'static str> {
                 println!();
             }
         }
-    }
 
-    {
-        let module = vm::Module::new();
+        let mut vm = vm::VM::new();
+        vm.load_module(module);
+        if let Err(e) = vm.set_entry_function("main".into()) {
+            println!("{}", e);
+            return Ok(());
+        }
+
+        loop {
+            println!("pc: {} mpc: {}", vm.get_pc(), vm.get_module_pc());
+            if !vm.step() {
+                break;
+            }
+        }
+        println!("ret: {}", vm.get_return_value());
     }
 
     Ok(())

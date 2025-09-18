@@ -1,8 +1,6 @@
-use crate::lang::tokenizer::{Token, Tokenizer};
+use crate::lang::tokenizer::*;
 use crate::lang::vm;
 use crate::lang::vm::*;
-use alloc::format;
-use alloc::string::String;
 use alloc::vec::Vec;
 use uefi_services::println;
 
@@ -13,7 +11,7 @@ pub struct Compiler<'a> {
 
 impl<'a> Compiler<'_> {
     pub fn new(tokenizer: &'a mut Tokenizer) -> Compiler<'a> {
-        let mut inst = Compiler {
+        let inst = Compiler {
             tokenizer: tokenizer,
             module: Module::new(),
         };
@@ -21,31 +19,27 @@ impl<'a> Compiler<'_> {
         return inst;
     }
 
-    pub fn get_module(&mut self) -> &Module {
-        return &self.module;
+    pub fn get_module(&mut self) -> &mut Module {
+        return &mut self.module;
     }
 
-    pub fn get_bytes(&mut self) -> Result<Vec<u8>, bincode::error::EncodeError> {
-        let cfg = bincode::config::standard();
-        let bytes = bincode::encode_to_vec(&self.module, cfg);
-        return bytes;
-    }
-
-    pub fn parse_expression(&mut self) -> Result<Block, &'static str> {
+    pub fn parse_expression(&mut self) -> Result<BlockKind, &'static str> {
         self.tokenizer.next();
         self.tokenizer.next();
 
-        Ok(Block::Return(BlockValue::Number(123.0)))
+        let block = BlockKind::Return(BlockValue::Number(123.0));
+
+        Ok(block)
     }
 
-    pub fn parse_statement(&mut self) -> Result<Block, &'static str> {
+    pub fn parse_statement(&mut self) -> Result<BlockKind, &'static str> {
         let token = self.tokenizer.next();
         match token {
             Token::Return => {
                 return self.parse_expression();
             }
             Token::Semicolon => {
-                return Ok(Block::BasicBlock(Vec::new()));
+                return Ok(BlockKind::BasicBlock());
             }
             _ => {
                 println!("{:?}", token);
@@ -55,8 +49,8 @@ impl<'a> Compiler<'_> {
         //return Err("parse_statement did not parse any of the above statements");
     }
 
-    pub fn parse_block(&mut self) -> Result<Block, &'static str> {
-        let mut blocks = Vec::<Block>::new();
+    pub fn parse_block(&mut self) -> Result<Vec<BlockKind>, &'static str> {
+        let mut blocks = Vec::<BlockKind>::new();
         loop {
             let result = self.parse_statement();
             if let Err(e) = result {
@@ -70,27 +64,26 @@ impl<'a> Compiler<'_> {
                 break;
             }
         }
-        Ok(Block::BasicBlock(blocks))
+        Ok(blocks)
     }
 
     pub fn parse_function(&mut self) -> Result<(), &'static str> {
         let token = self.tokenizer.next();
         if let Token::Identifier(name) = token {
-            let mut func = Function {
-                name: name,
-                block: Block::BasicBlock(Vec::new()),
-            };
+            let func = BlockKind::Function { name: name };
 
             if !matches!(self.tokenizer.next(), Token::Lbrace) {
                 return Err("expected `{` after fn");
             }
 
             let result = self.parse_block();
-            if let Ok(block) = result {
-                func.block = block;
+            if let Ok(blocks) = result {
+                let parent_id = self.module.blocks.add_block(func, None);
+                for block in blocks {
+                    println!("add block {:?} to {}", block, parent_id);
+                    self.module.blocks.add_block(block, Some(parent_id));
+                }
             }
-
-            self.module.functions.push(func);
         } else {
             return Err("expected identifier after fn");
         }
