@@ -18,8 +18,11 @@ Why are ZenLang VM and ZenLang seperate levels? The kernel controls the VM, kern
 
 Design of ZenLang
 -----------------
-ZenLang code is compiled to series of functions of opcodes, which we call "modules".
-A module contains:
-- Module name
-- Functions and their opcodes and names
-- Global static strings
+ZenLang code is compiled to series of blocks, which we call "modules".
+Modules can be dynamically loaded at any time of the program execution
+
+Design of ZenLang Virtual Machine
+---------------------------------
+ZenLang VM is not a type of vm you would expect. It's not stack based, nor does it try to replicate how cpu's work
+Instead, ZenLang VM is built on blocks and modules. Every block and module has an ID.
+ZenLang VM executes blocks step by step, this means ZenLang VM has a program counter. In our case, it has not only one PC, but two - one for the block, one for the module
