@@ -13,14 +13,16 @@ pub fn zen_main() -> Result<(), &'static str> {
             println!("compilation error: {}", e);
         }
 
-        let bytes = compiler.get_bytes();
-        for i in 0..bytes.len() {
-            let byte = bytes[i];
-            print!("{:x}     ", byte);
-            if byte != 0 {
-                print!("{}", byte as char);
+        if let Ok(bytes) = compiler.get_bytes() {
+            println!("{:?}", compiler.get_module());
+            for i in 0..bytes.len() {
+                let byte = bytes[i];
+                print!("{:x}     ", byte);
+                if byte != 0 {
+                    print!("{}", byte as char);
+                }
+                println!();
             }
-            println!();
         }
     }
 

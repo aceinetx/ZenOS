@@ -1,58 +1,96 @@
 use crate::lang::tokenizer::{Token, Tokenizer};
+use crate::lang::vm;
 use crate::lang::vm::*;
+use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 use uefi_services::println;
 
 pub struct Compiler<'a> {
     tokenizer: &'a mut Tokenizer,
-    bytes: Vec<u8>,
-    header: Vec<u8>,
-    symtab: Vec<u8>,
-    text: Vec<u8>,
-    data: Vec<u8>,
-    symtab_addr: usize,
+    module: vm::Module,
 }
 
 impl<'a> Compiler<'_> {
     pub fn new(tokenizer: &'a mut Tokenizer) -> Compiler<'a> {
         let mut inst = Compiler {
             tokenizer: tokenizer,
-            bytes: Vec::new(),
-            header: Vec::new(),
-            symtab: Vec::new(),
-            text: Vec::new(),
-            data: Vec::new(),
-            symtab_addr: 0,
+            module: Module::new(),
         };
-        inst.add_header();
 
         return inst;
     }
 
-    pub fn get_bytes(&mut self) -> &Vec<u8> {
-        self.bytes.clear();
-        self.bytes.append(&mut self.header);
-        self.bytes.append(&mut self.symtab);
-        self.bytes.append(&mut self.text);
-        self.bytes.append(&mut self.data);
-        return &self.bytes;
+    pub fn get_module(&mut self) -> &Module {
+        return &self.module;
     }
 
-    fn add_header(&mut self) {
-        self.header
-            .append(&mut String::from("ZEN").bytes().collect::<Vec<u8>>());
-        self.header.push(1);
+    pub fn get_bytes(&mut self) -> Result<Vec<u8>, bincode::error::EncodeError> {
+        let cfg = bincode::config::standard();
+        let bytes = bincode::encode_to_vec(&self.module, cfg);
+        return bytes;
+    }
 
-        self.symtab_addr = self.header.len();
+    pub fn parse_expression(&mut self) -> Result<Block, &'static str> {
+        self.tokenizer.next();
+        self.tokenizer.next();
 
-        self.header
-            .append(&mut self.symtab_addr.to_le_bytes().to_vec());
+        Ok(Block::Return(BlockValue::Number(123.0)))
+    }
+
+    pub fn parse_statement(&mut self) -> Result<Block, &'static str> {
+        let token = self.tokenizer.next();
+        match token {
+            Token::Return => {
+                return self.parse_expression();
+            }
+            Token::Semicolon => {
+                return Ok(Block::BasicBlock(Vec::new()));
+            }
+            _ => {
+                println!("{:?}", token);
+                return Err("unexpected token");
+            }
+        }
+        //return Err("parse_statement did not parse any of the above statements");
+    }
+
+    pub fn parse_block(&mut self) -> Result<Block, &'static str> {
+        let mut blocks = Vec::<Block>::new();
+        loop {
+            let result = self.parse_statement();
+            if let Err(e) = result {
+                return Err(e);
+            } else if let Ok(inner) = result {
+                blocks.push(inner);
+            }
+
+            let token = self.tokenizer.next();
+            if matches!(token, Token::Rbrace) {
+                break;
+            }
+        }
+        Ok(Block::BasicBlock(blocks))
     }
 
     pub fn parse_function(&mut self) -> Result<(), &'static str> {
         let token = self.tokenizer.next();
         if let Token::Identifier(name) = token {
+            let mut func = Function {
+                name: name,
+                block: Block::BasicBlock(Vec::new()),
+            };
+
+            if !matches!(self.tokenizer.next(), Token::Lbrace) {
+                return Err("expected `{` after fn");
+            }
+
+            let result = self.parse_block();
+            if let Ok(block) = result {
+                func.block = block;
+            }
+
+            self.module.functions.push(func);
         } else {
             return Err("expected identifier after fn");
         }

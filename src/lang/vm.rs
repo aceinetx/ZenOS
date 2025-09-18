@@ -1,15 +1,30 @@
 use alloc::string::String;
 use alloc::vec::Vec;
+use bincode::*;
 
-pub enum Opcode {}
-
-pub struct Function {
-    name: String,
-    code: Vec<Opcode>,
+#[derive(Encode, Decode, Debug)]
+pub enum BlockValue {
+    Number(f64),
+    String(String),
+    Boolean(bool),
 }
 
+#[derive(Encode, Decode, Debug)]
+pub enum Block {
+    Function { name: String, blocks: Vec<Block> },
+    Return(BlockValue),
+    BasicBlock(Vec<Block>),
+}
+
+#[derive(Encode, Decode, Debug)]
+pub struct Function {
+    pub name: String,
+    pub block: Block,
+}
+
+#[derive(Encode, Decode, Debug)]
 pub struct Module {
-    functions: Vec<Function>,
+    pub functions: Vec<Function>,
 }
 
 impl Module {
@@ -21,14 +36,12 @@ impl Module {
 }
 
 pub struct VM<'a> {
-    stack: Vec<(&'a mut Function, usize)>,
     modules: Vec<&'a mut Module>,
 }
 
 impl<'a> VM<'_> {
     pub fn new() -> VM<'a> {
         return VM {
-            stack: Vec::new(),
             modules: Vec::new(),
         };
     }
