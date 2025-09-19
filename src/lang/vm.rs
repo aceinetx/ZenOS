@@ -1,142 +1,20 @@
-use alloc::fmt::Display;
+use crate::lang::module::Module;
+use crate::lang::opcode::Opcode;
+use crate::lang::register::Register;
+use crate::lang::strong_u64::*;
 use alloc::string::String;
 use alloc::vec::Vec;
-use bincode::*;
-use uefi_services::*;
-
-#[derive(Encode, Decode, Debug)]
-pub enum BlockValue {
-    None,
-    Number(f64),
-    String(String),
-    Boolean(bool),
-    VarRef(String),
-}
-
-#[derive(Encode, Decode, Debug)]
-pub enum Value {
-    None,
-    Number(f64),
-    String(String),
-    Boolean(bool),
-}
-
-impl Display for Value {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
-        let result;
-        match self {
-            Value::None => {
-                result = write!(f, "None");
-            }
-            Value::Number(n) => {
-                result = write!(f, "{}", n);
-            }
-            Value::String(s) => {
-                result = write!(f, "{}", s);
-            }
-            Value::Boolean(flag) => {
-                result = write!(f, "{}", flag);
-            }
-        }
-        return result;
-    }
-}
-
-#[derive(Encode, Decode, Debug)]
-pub enum BlockKind {
-    Function { name: String },
-    Return(BlockValue),
-    BasicBlock(),
-}
-
-#[derive(Encode, Decode, Debug)]
-pub struct Block {
-    kind: BlockKind,
-    parent: Option<usize>,
-    children: Vec<usize>,
-    id: usize,
-}
-
-#[derive(Encode, Decode, Debug)]
-pub struct BlockArena {
-    blocks: Vec<Block>,
-}
-
-impl BlockArena {
-    pub fn new() -> Self {
-        return Self { blocks: Vec::new() };
-    }
-
-    pub fn add_block(&mut self, kind: BlockKind, parent: Option<usize>) -> usize {
-        let idx = self.blocks.len();
-        self.blocks.push(Block {
-            kind: kind,
-            parent: parent,
-            children: Vec::new(),
-            id: idx,
-        });
-        if let Some(p) = parent {
-            self.blocks[p].children.push(idx);
-        }
-        return idx;
-    }
-
-    pub fn get_blocks(&self) -> &Vec<Block> {
-        return &self.blocks;
-    }
-
-    pub fn get_block(&self, id: usize) -> Result<&Block, &'static str> {
-        for block in self.blocks.iter() {
-            if block.id == id {
-                return Ok(block);
-            }
-        }
-        return Err("could not find block");
-    }
-
-    pub fn get_block_mut(&mut self, id: usize) -> Result<&mut Block, &'static str> {
-        for block in self.blocks.iter_mut() {
-            if block.id == id {
-                return Ok(block);
-            }
-        }
-        return Err("could not find block");
-    }
-}
-
-#[derive(Encode, Decode, Debug)]
-pub struct Module {
-    pub blocks: BlockArena,
-}
-
-impl Module {
-    pub fn new() -> Module {
-        return Module {
-            blocks: BlockArena::new(),
-        };
-    }
-
-    pub fn compile(&self) -> Result<Vec<u8>, bincode::error::EncodeError> {
-        let cfg = bincode::config::standard();
-        let bytes = bincode::encode_to_vec(self, cfg);
-        return bytes;
-    }
-
-    pub fn load(_bytes: Vec<u8>) {
-        todo!();
-    }
-
-    pub fn get_block(&self, id: usize) -> Result<&Block, &'static str> {
-        return self.blocks.get_block(id);
-    }
-}
 
 pub struct VM<'a> {
     modules: Vec<&'a mut Module>,
-    pc: usize,
-    module_pc: usize,
-    return_value: Value,
-    entry_fn_id: usize,
+    pub pc: u64,
+    pub r1: u64,
+    pub r2: u64,
+    pub r3: u64,
+    pub r4: u64,
+    pub r5: u64,
+    pub r6: u64,
+    pub stack: Vec<u64>,
 }
 
 impl<'a> VM<'a> {
@@ -144,9 +22,13 @@ impl<'a> VM<'a> {
         return VM {
             modules: Vec::new(),
             pc: 0,
-            module_pc: 0,
-            return_value: Value::None,
-            entry_fn_id: 0,
+            r1: 0,
+            r2: 0,
+            r3: 0,
+            r4: 0,
+            r5: 0,
+            r6: 0,
+            stack: Vec::new(),
         };
     }
 
@@ -154,95 +36,110 @@ impl<'a> VM<'a> {
         self.modules.push(module);
     }
 
-    pub fn get_pc(&self) -> usize {
-        return self.pc;
-    }
-
-    pub fn get_module_pc(&self) -> usize {
-        return self.module_pc;
-    }
-
-    pub fn get_return_value(&self) -> &Value {
-        return &self.return_value;
-    }
-
-    pub fn set_entry_function(&mut self, entry_fn_name: String) -> Result<(), &'static str> {
-        for module_id in 0..self.modules.len() {
-            let module = self.modules.get_mut(module_id).unwrap();
-
-            for block in module.blocks.get_blocks() {
-                if let BlockKind::Function { name: fn_name } = &block.kind {
-                    if fn_name.eq(&entry_fn_name) {
-                        self.pc = block.id + 1;
-                        self.module_pc = module_id;
-                        self.entry_fn_id = block.id;
-                        return Ok(());
-                    }
+    pub fn set_entry_function(&mut self, entry_fn_name: &str) -> Result<(), &'static str> {
+        for i in 0..self.modules.len() {
+            let module = &self.modules[i];
+            for function in module.functions.iter() {
+                if function.0 == entry_fn_name {
+                    self.pc.set_low(function.1 as u32);
+                    self.pc.set_high(i as u32);
+                    return Ok(());
                 }
             }
         }
-
         return Err("cannot find entry function");
     }
 
-    fn get_value_from_block_value(&self, value: &BlockValue) -> Value {
-        match value {
-            BlockValue::None => {
-                return Value::None;
+    pub fn get_register(&self, reg: &Register) -> &u64 {
+        match reg {
+            Register::R1 => {
+                return &self.r1;
             }
-            BlockValue::Number(n) => {
-                return Value::Number(*n);
+            Register::R2 => {
+                return &self.r2;
             }
-            BlockValue::String(s) => {
-                return Value::String(s.clone());
+            Register::R3 => {
+                return &self.r3;
             }
-            BlockValue::Boolean(flag) => {
-                return Value::Boolean(*flag);
+            Register::R4 => {
+                return &self.r4;
             }
-            BlockValue::VarRef(_) => {
-                todo!();
+            Register::R5 => {
+                return &self.r5;
+            }
+            Register::R6 => {
+                return &self.r6;
             }
         }
     }
 
-    fn determine_block_function_id(&self, block: &Block) -> Option<usize> {
-        if block.parent.is_none() {
-            if let BlockKind::Function { name: _ } = &block.kind {
-                return Some(block.id);
+    pub fn get_register_mut(&mut self, reg: &Register) -> &mut u64 {
+        match reg {
+            Register::R1 => {
+                return &mut self.r1;
             }
-            return None;
+            Register::R2 => {
+                return &mut self.r2;
+            }
+            Register::R3 => {
+                return &mut self.r3;
+            }
+            Register::R4 => {
+                return &mut self.r4;
+            }
+            Register::R5 => {
+                return &mut self.r5;
+            }
+            Register::R6 => {
+                return &mut self.r6;
+            }
         }
-        let result = self.modules[self.module_pc].get_block(block.parent.unwrap());
-        if let Ok(parent) = result {
-            return self.determine_block_function_id(parent);
-        }
+    }
 
-        return None;
+    fn execute_opcode(&mut self, opcode: &Opcode) {
+        match opcode {
+            Opcode::Push(reg) => {
+                self.stack.push(*self.get_register(reg));
+            }
+            Opcode::PushIMM(imm) => {
+                self.stack.push(*imm);
+            }
+            Opcode::Mov(dest, src) => {
+                *self.get_register_mut(dest) = *self.get_register(src);
+            }
+            Opcode::MovIMM(dest, imm) => {
+                *self.get_register_mut(&dest) = *imm;
+            }
+            Opcode::Ret() => {
+                if !self.stack.is_empty() {
+                    self.pc = self.stack.pop().unwrap();
+                } else {
+                    self.pc.set_high(u32::MAX);
+                }
+            }
+        }
     }
 
     pub fn step(&mut self) -> bool {
-        if self.module_pc >= self.modules.len() {
+        let module_index = self.pc.get_high() as usize;
+        let opcode_index = self.pc.get_low();
+        if module_index >= self.modules.len() {
             return false;
         }
 
-        if let Ok(block) = self.modules[self.module_pc].get_block(self.pc) {
-            println!("executing {:?}", block);
-            match &block.kind {
-                BlockKind::Return(value) => {
-                    self.return_value = self.get_value_from_block_value(value);
-                    if let Some(func_id) = self.determine_block_function_id(block) {
-                        if func_id == self.entry_fn_id {
-                            self.module_pc = usize::MAX;
-                        }
-                    }
-                }
-                _ => {}
-            }
-        } else {
+        let module = core::mem::take(self.modules[module_index]);
+        if opcode_index >= module.opcodes.len() as u32 {
             return false;
         }
 
-        self.pc += 1;
+        let opcode = module.get_opcode(opcode_index);
+
+        self.execute_opcode(opcode);
+
+        *self.modules[module_index as usize] = module;
+
+        self.pc.add_low(1);
+
         return true;
     }
 }
