@@ -7,5 +7,6 @@ pub enum Opcode {
     PushIMM(u64),
     Mov(Register, Register),
     MovIMM(Register, u64),
+    Add(Register, Register),
     Ret(),
 }

@@ -1,12 +1,6 @@
-use alloc::string::String;
+use alloc::string::*;
 
-#[derive(Debug)]
-pub struct Tokenizer {
-    code: String,
-    pos: usize,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
     Fn,
     Return,
@@ -16,13 +10,26 @@ pub enum Token {
     Operator(char),
     Lbrace,
     Rbrace,
+    Lparen,
+    Rparen,
     Semicolon,
     EOF,
 }
 
+#[derive(Debug)]
+pub struct Tokenizer {
+    code: String,
+    pos: usize,
+    pub current_token: Token,
+}
+
 impl Tokenizer {
     pub fn new(code: String) -> Tokenizer {
-        return Tokenizer { code: code, pos: 0 };
+        return Tokenizer {
+            code: code,
+            pos: 0,
+            current_token: Token::EOF,
+        };
     }
 
     fn is_digit(&self, ch: char) -> bool {
@@ -95,6 +102,15 @@ impl Tokenizer {
             } else if c == ';' {
                 self.pos += 1;
                 return Token::Semicolon;
+            } else if ['+', '-', '*', '/'].contains(&c) {
+                self.pos += 1;
+                return Token::Operator(c);
+            } else if c == '(' {
+                self.pos += 1;
+                return Token::Lparen;
+            } else if c == ')' {
+                self.pos += 1;
+                return Token::Rparen;
             }
             self.pos += 1;
         }

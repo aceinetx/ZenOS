@@ -1,12 +1,15 @@
 use crate::lang::ast::*;
+use crate::lang::tokenizer;
 use crate::lang::tokenizer::*;
 use alloc::boxed::*;
+use alloc::vec;
 use alloc::vec::*;
 use uefi::println;
 
 pub struct Parser<'a> {
     pub root: root::AstRoot,
     tokenizer: &'a mut Tokenizer,
+    current_token: Token,
 }
 
 impl<'a> Parser<'_> {
@@ -14,31 +17,149 @@ impl<'a> Parser<'_> {
         return Parser {
             root: root::AstRoot::new(),
             tokenizer: tokenizer,
+            current_token: Token::EOF,
         };
     }
 
-    pub fn parse_expression(&mut self) -> Result<Box<dyn node::Compile>, &'static str> {
-        self.tokenizer.next();
-        self.tokenizer.next();
+    fn get_token_precedence(&mut self, token: &Token) -> Option<i32> {
+        match *token {
+            Token::Operator(op) => {
+                if op == '+' {
+                    return Some(1);
+                } else if op == '-' {
+                    return Some(1);
+                } else if op == '*' {
+                    return Some(2);
+                } else if op == '/' {
+                    return Some(2);
+                }
+                return None;
+            }
+            _ => {
+                return None;
+            }
+        }
+    }
 
-        //self.module.opcodes.push(Opcode::MovIMM(Register::R1, 123));
-        let mut ret_ast = ret::AstReturn::new();
-        let mut num = number::AstNumber::new();
-        num.number = 123.0;
-        ret_ast.value = Some(Box::new(num));
+    fn next(&mut self) -> Token {
+        let token = self.tokenizer.next();
+        self.current_token = token.clone();
+        return token;
+    }
 
-        Ok(Box::new(ret_ast))
+    pub fn parse_expression(
+        &mut self,
+        min_prec: i32,
+    ) -> Result<Box<dyn node::Compile>, &'static str> {
+        let mut token;
+        if min_prec == 0 {
+            token = self.next();
+        } else {
+            token = self.current_token.clone();
+        }
+
+        println!("prec {}, token {:?}", min_prec, token);
+
+        let mut left: Box<dyn node::Compile>;
+
+        match token {
+            Token::Operator(op) => {
+                let prec = self.get_token_precedence(&token).unwrap();
+                self.current_token = self.next();
+
+                match self.parse_expression(prec) {
+                    Ok(node) => {
+                        left = node;
+                    }
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+            }
+            Token::Number(num) => {
+                let mut node = number::AstNumber::new();
+                node.number = num;
+                left = Box::new(node);
+
+                token = self.next();
+            }
+            Token::Lparen => match self.parse_expression(0) {
+                Ok(node) => {
+                    left = node;
+                    if !matches!(token, Token::Rparen) {
+                        return Err("expected `)`");
+                    }
+                }
+                Err(e) => {
+                    return Err(e);
+                }
+            },
+            _ => {
+                println!("{:?}", token);
+                return Err("unexpected token in parse_expression");
+            }
+        }
+
+        loop {
+            token = self.current_token.clone();
+            if let Token::Operator(_) = token {
+                match self.get_token_precedence(&token) {
+                    Some(prec) => {
+                        if prec < min_prec {
+                            break;
+                        }
+
+                        // note to the future:
+                        // right assoc: next_min = prec
+                        // left assoc: next_min = prec + 1
+                        let next_min = prec + 1;
+                        match self.parse_expression(next_min) {
+                            Err(e) => {
+                                return Err(e);
+                            }
+                            Ok(right) => {
+                                if let Token::Operator(op) = token {
+                                    let mut binop = binop::AstBinop::new();
+                                    binop.a = Some(left);
+                                    binop.b = Some(right);
+                                    if op == '+' {
+                                        binop.op = binop::AstBinopOp::PLUS;
+                                    } else if op == '-' {
+                                        binop.op = binop::AstBinopOp::MINUS;
+                                    } else if op == '*' {
+                                        binop.op = binop::AstBinopOp::MUL;
+                                    } else if op == '/' {
+                                        binop.op = binop::AstBinopOp::DIV;
+                                    }
+                                    left = Box::new(binop);
+                                }
+                            }
+                        }
+                    }
+                    None => {
+                        break;
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+
+        Ok(left)
     }
 
     pub fn parse_statement(&mut self) -> Result<Option<Box<dyn node::Compile>>, &'static str> {
-        let token = self.tokenizer.next();
+        let token = self.next();
+
         match token {
-            Token::Return => match self.parse_expression() {
+            Token::Return => match self.parse_expression(0) {
                 Err(e) => {
                     return Err(e);
                 }
                 Ok(node) => {
-                    return Ok(Some(node));
+                    let mut ret = ret::AstReturn::new();
+                    ret.value = Some(node);
+                    return Ok(Some(Box::new(ret)));
                 }
             },
             Token::Semicolon => {

@@ -1,4 +1,5 @@
-use crate::lang::ast::node::Compile;
+use crate::lang::register::Register;
+use crate::lang::{ast::node::Compile, opcode::Opcode};
 use alloc::vec::*;
 
 pub enum AstBinopOp {
@@ -31,8 +32,33 @@ impl Compile for AstBinop {
 
     fn compile(
         &mut self,
-        _compiler: &mut crate::lang::compiler::Compiler,
+        compiler: &mut crate::lang::compiler::Compiler,
     ) -> Result<(), alloc::string::String> {
+        if let Some(left) = &mut self.a {
+            if let Err(e) = left.compile(compiler) {
+                return Err(e);
+            }
+        }
+        if let Some(right) = &mut self.b {
+            if let Err(e) = right.compile(compiler) {
+                return Err(e);
+            }
+        }
+
+        match self.op {
+            AstBinopOp::PLUS => {
+                let right = Register::R(compiler.registers.pop().unwrap());
+                let left_raw = compiler.registers.pop().unwrap();
+                let left = Register::R(left_raw);
+                let opcode = Opcode::Add(left, right);
+                {
+                    let module = compiler.get_module();
+                    module.opcodes.push(opcode);
+                }
+                compiler.registers.push(left_raw);
+            }
+            _ => {}
+        }
         Ok(())
     }
 }

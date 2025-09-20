@@ -69,6 +69,9 @@ impl<'a> VM<'a> {
             Opcode::MovIMM(dest, imm) => {
                 *self.get_register_mut(&dest) = *imm;
             }
+            Opcode::Add(dest, src) => {
+                *self.get_register_mut(&dest) += *self.get_register(src);
+            }
             Opcode::Ret() => {
                 if !self.stack.is_empty() {
                     self.pc = self.stack.pop().unwrap();
