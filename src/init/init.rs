@@ -10,24 +10,24 @@ pub fn init() -> Result<(), &'static str> {
 
     let allocator_start = 0x1000000;
     let allocator_size = 0x1000000;
+    println!("[init] Initializing shared allocator [0x{:x} - 0x{:x}]", allocator_start, allocator_start + allocator_size);
     init_shared_allocator(allocator_start, allocator_size);
+    println!("[init] Shared allocator initalized");
 
+    println!("[init] Calling main procedure");
     if let Err(e) = main() {
-        println!("error: main: {}", e);
+        println!("[init] error: main: {}", e);
     }
 
-    println!("Checking for leaks on a shared allocator...");
+    println!("[init] Checking for leaks on a shared allocator...");
 
     {
         let x = alloc::<i32>();
         free(x);
         if x as usize != allocator_start {
-            println!(
-                "! Memory leaked, last allocated memory address ({:x}) != {:x} (allocator_start)",
-                x as usize, allocator_start
-            );
+            panic!("Memory leaked, last allocated memory address ({:x}) != {:x} (allocator_start)", x as usize, allocator_start);
         } else {
-            println!("No leaks, shi's fine");
+            println!("[init] No leaks, shi's fine");
         }
     }
 

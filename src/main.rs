@@ -10,7 +10,17 @@ use core::panic::*;
 
 #[panic_handler]
 fn panic_handler(info: &PanicInfo) -> ! {
-    println!("{}", info);
+    println!("[panic] -- panic begin --");
+    match info.location(){
+        Some(location) => {
+            println!("[panic] location: {}[{}:{}]", location.file(), location.line(), location.column());
+        }
+        None => {
+            println!("[panic] location: unavailable");
+        }
+    }
+    println!("[panic] message: {}", info.message());
+    println!("[panic] -- panic end --");
     loop {}
 }
 
