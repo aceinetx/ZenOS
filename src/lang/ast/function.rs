@@ -1,7 +1,6 @@
 use crate::lang::ast::node::Compile;
 use alloc::string::*;
 use alloc::vec::*;
-use uefi_services::*;
 
 pub struct AstFunction {
     pub children: Vec<alloc::boxed::Box<dyn Compile>>,

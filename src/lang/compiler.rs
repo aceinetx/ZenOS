@@ -3,7 +3,6 @@ use crate::lang::module::Module;
 use crate::lang::parser::*;
 use alloc::string::*;
 use alloc::vec::*;
-use uefi_services::*;
 
 pub struct Compiler<'a> {
     parser: &'a mut Parser<'a>,

@@ -2,7 +2,6 @@ use crate::lang::module::Module;
 use crate::lang::opcode::Opcode;
 use crate::lang::register::Register;
 use crate::lang::strong_u64::*;
-use alloc::string::String;
 use alloc::vec::Vec;
 
 pub struct VM<'a> {

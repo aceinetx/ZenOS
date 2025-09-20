@@ -31,7 +31,7 @@ impl Compile for AstBinop {
 
     fn compile(
         &mut self,
-        compiler: &mut crate::lang::compiler::Compiler,
+        _compiler: &mut crate::lang::compiler::Compiler,
     ) -> Result<(), alloc::string::String> {
         Ok(())
     }
