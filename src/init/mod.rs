@@ -8,13 +8,15 @@ pub fn zen_main() -> Result<(), &'static str> {
     {
         let code = String::from("fn main { return 123; }");
         let mut tokenizer = tokenizer::Tokenizer::new(code);
-        let mut compiler = compiler::Compiler::new(&mut tokenizer);
+        let mut parser = parser::Parser::new(&mut tokenizer);
+        let mut compiler = compiler::Compiler::new(&mut parser);
         if let Err(e) = compiler.compile() {
             println!("compilation error: {}", e);
         }
 
         let module = compiler.get_module();
         //module.debug_bytes();
+        println!("{:?}", module);
 
         let mut vm = vm::VM::new();
         vm.load_module(module);
@@ -29,7 +31,7 @@ pub fn zen_main() -> Result<(), &'static str> {
                 break;
             }
         }
-        println!("r1: {}", vm.r1);
+        println!("r0: {}", vm.registers[0]);
     }
 
     Ok(())

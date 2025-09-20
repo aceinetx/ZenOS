@@ -1,109 +1,52 @@
+use crate::lang::ast::node::Compile;
 use crate::lang::module::Module;
-use crate::lang::opcode::Opcode;
-use crate::lang::register::Register;
-use crate::lang::tokenizer::*;
-use alloc::string::String;
-use alloc::vec::Vec;
-use uefi_services::println;
+use crate::lang::parser::*;
+use alloc::string::*;
+use alloc::vec::*;
+use uefi_services::*;
 
 pub struct Compiler<'a> {
-    tokenizer: &'a mut Tokenizer,
+    parser: &'a mut Parser<'a>,
     module: Module,
+    pub registers: Vec<u8>,
+    register_index: u8,
 }
 
 impl<'a> Compiler<'_> {
-    pub fn new(tokenizer: &'a mut Tokenizer) -> Compiler<'a> {
+    pub fn new(parser: &'a mut Parser<'a>) -> Compiler<'a> {
         let inst = Compiler {
-            tokenizer: tokenizer,
+            parser: parser,
             module: Module::new(),
+            registers: Vec::new(),
+            register_index: 0,
         };
 
         return inst;
+    }
+
+    pub fn get_new_register(&mut self) -> u8 {
+        self.register_index += 1;
+        if self.register_index > 127 {
+            self.register_index = 0;
+        }
+
+        return self.register_index;
     }
 
     pub fn get_module(&mut self) -> &mut Module {
         return &mut self.module;
     }
 
-    pub fn parse_expression(&mut self) -> Result<(), &'static str> {
-        self.tokenizer.next();
-        self.tokenizer.next();
-
-        self.module.opcodes.push(Opcode::MovIMM(Register::R1, 123));
-
-        Ok(())
-    }
-
-    pub fn parse_statement(&mut self) -> Result<(), &'static str> {
-        let token = self.tokenizer.next();
-        match token {
-            Token::Return => {
-                if let Err(e) = self.parse_expression() {
-                    return Err(e);
-                }
-                self.module.opcodes.push(Opcode::Ret());
-                return Ok(());
-            }
-            Token::Semicolon => {
-                return Ok(());
-            }
-            _ => {
-                println!("{:?}", token);
-                return Err("unexpected token");
-            }
+    pub fn compile(&mut self) -> Result<(), String> {
+        if let Err(e) = self.parser.parse() {
+            return Err(e.into());
         }
-        //return Err("parse_statement did not parse any of the above statements");
-    }
 
-    pub fn parse_block(&mut self) -> Result<(), &'static str> {
-        loop {
-            let result = self.parse_statement();
-            if let Err(e) = result {
-                return Err(e);
-            }
+        let mut root = core::mem::take(&mut self.parser.root);
+        let result = root.compile_all(self);
 
-            let token = self.tokenizer.next();
-            if matches!(token, Token::Rbrace) {
-                break;
-            }
-        }
-        Ok(())
-    }
+        self.parser.root = root;
 
-    pub fn parse_function(&mut self) -> Result<(), &'static str> {
-        let token = self.tokenizer.next();
-        if let Token::Identifier(name) = token {
-            let function: (String, u32) = (name, self.module.opcodes.len() as u32);
-            self.module.functions.push(function);
-
-            if !matches!(self.tokenizer.next(), Token::Lbrace) {
-                return Err("expected `{` after fn");
-            }
-
-            let result = self.parse_block();
-            if let Err(e) = result {
-                return Err(e);
-            }
-        } else {
-            return Err("expected identifier after fn");
-        }
-        Ok(())
-    }
-
-    pub fn compile(&mut self) -> Result<(), &'static str> {
-        let mut token = self.tokenizer.next();
-        while !matches!(token, Token::EOF) {
-            println!("tkn: {:?}", token);
-            match token {
-                Token::Fn => {
-                    if let Err(e) = self.parse_function() {
-                        return Err(e);
-                    }
-                }
-                _ => {}
-            }
-            token = self.tokenizer.next();
-        }
-        Ok(())
+        return result;
     }
 }

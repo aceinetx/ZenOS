@@ -3,18 +3,23 @@ use alloc::boxed::*;
 use alloc::string::String;
 use alloc::vec::*;
 
-trait Compile {
-    fn get_children(&mut self) -> &mut Vec<Box<dyn Compile>>;
+pub trait Compile {
+    fn get_children(&mut self) -> Option<&mut Vec<Box<dyn Compile>>>;
 
-    fn compile_children(&mut self, compiler: &mut Compiler) -> Result<(), String> {
-        let children = self.get_children();
-        for child in children.iter_mut() {
-            if let Err(e) = child.compile(compiler) {
-                return Err(e);
+    fn compile_all(&mut self, compiler: &mut Compiler) -> Result<(), String> {
+        if let Err(e) = self.compile(compiler) {
+            return Err(e);
+        }
+
+        match self.get_children() {
+            Some(children) => {
+                for child in children.iter_mut() {
+                    if let Err(e) = child.compile_all(compiler) {
+                        return Err(e);
+                    }
+                }
             }
-            if let Err(e) = child.compile_children(compiler) {
-                return Err(e);
-            }
+            None => {}
         }
         Ok(())
     }

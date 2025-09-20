@@ -8,12 +8,7 @@ use alloc::vec::Vec;
 pub struct VM<'a> {
     modules: Vec<&'a mut Module>,
     pub pc: u64,
-    pub r1: u64,
-    pub r2: u64,
-    pub r3: u64,
-    pub r4: u64,
-    pub r5: u64,
-    pub r6: u64,
+    pub registers: [u64; 127],
     pub stack: Vec<u64>,
 }
 
@@ -22,12 +17,7 @@ impl<'a> VM<'a> {
         return VM {
             modules: Vec::new(),
             pc: 0,
-            r1: 0,
-            r2: 0,
-            r3: 0,
-            r4: 0,
-            r5: 0,
-            r6: 0,
+            registers: [0; 127],
             stack: Vec::new(),
         };
     }
@@ -52,46 +42,16 @@ impl<'a> VM<'a> {
 
     pub fn get_register(&self, reg: &Register) -> &u64 {
         match reg {
-            Register::R1 => {
-                return &self.r1;
-            }
-            Register::R2 => {
-                return &self.r2;
-            }
-            Register::R3 => {
-                return &self.r3;
-            }
-            Register::R4 => {
-                return &self.r4;
-            }
-            Register::R5 => {
-                return &self.r5;
-            }
-            Register::R6 => {
-                return &self.r6;
+            Register::R(index) => {
+                return &self.registers[*index as usize];
             }
         }
     }
 
     pub fn get_register_mut(&mut self, reg: &Register) -> &mut u64 {
         match reg {
-            Register::R1 => {
-                return &mut self.r1;
-            }
-            Register::R2 => {
-                return &mut self.r2;
-            }
-            Register::R3 => {
-                return &mut self.r3;
-            }
-            Register::R4 => {
-                return &mut self.r4;
-            }
-            Register::R5 => {
-                return &mut self.r5;
-            }
-            Register::R6 => {
-                return &mut self.r6;
+            Register::R(index) => {
+                return &mut self.registers[*index as usize];
             }
         }
     }
