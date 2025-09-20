@@ -11,7 +11,6 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -19,4 +18,36 @@ jobs:
     - name: Build
       run: |
         rustup default nightly
+        rustup target add x86_64-unknown-uefi
         ./build.sh
+      
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: artifact
+        path: target/x86_64-unknown-uefi/debug/zen_os.efi
+        
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: artifact
+
+      - name: Update Nightly Release
+        uses: andelf/nightly-release@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: nightly-release
+          name: 'Nightly Release'
+          body: |
+            Automated nightly release for commit ${{ github.sha }}.
+          files: |
+            zen_os.efi
