@@ -1,10 +1,12 @@
 #![no_main]
 #![no_std]
+#![allow(unused_imports)]
 
-use core::panic::*;
 use uefi::prelude::*;
 use uefi::*;
 use zen_os::init;
+
+use core::panic::*;
 
 #[panic_handler]
 fn panic_handler(info: &PanicInfo) -> ! {
