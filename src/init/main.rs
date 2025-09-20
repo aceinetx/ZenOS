@@ -1,6 +1,6 @@
 use crate::lang::*;
 use alloc::string::String;
-use uefi_services::*;
+use uefi::println;
 
 pub fn main() -> Result<(), &'static str> {
     println!();

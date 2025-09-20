@@ -1,25 +1,32 @@
 use crate::globals;
 use alloc::string::String;
-use uefi::proto::console::text::{Key, ScanCode};
-use uefi_services::print;
+use uefi::proto::console::text::Key;
+use uefi::{Char16, print};
+use uefi_raw::protocol::console::InputKey;
 
 pub fn get_char() -> Key {
-    let mut key = Key::Special(ScanCode::NULL);
-    while matches!(key, Key::Special(ScanCode::NULL)) {
+    let null_char = Char16::try_from(0u16).unwrap();
+    let mut key;
+    loop {
         key = get_char_unlocked();
+        if let Key::Printable(k) = key {
+            if k != null_char {
+                break;
+            }
+        }
     }
 
     return key;
 }
 
 pub fn get_char_unlocked() -> Key {
-    let mut st = globals::get_system_table();
-    if let Ok(opt) = st.stdin().read_key() {
-        if let Some(key) = opt {
-            return key;
-        }
+    unsafe {
+        let st = globals::get_system_table();
+        let stdin = st.stdin;
+        let mut input_key: InputKey = InputKey::default();
+        let _ = ((*stdin).read_key_stroke)(stdin, &mut input_key);
+        return input_key.into();
     }
-    return Key::Special(ScanCode::NULL);
 }
 
 pub fn get_string() -> String {

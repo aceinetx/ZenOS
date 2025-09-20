@@ -2,6 +2,7 @@ use core::alloc::Layout;
 use core::ptr::NonNull;
 use linked_list_allocator::*;
 
+#[global_allocator]
 static ALLOCATOR: LockedHeap = LockedHeap::empty();
 
 pub fn alloc_bytes<T>(size: usize) -> *mut T {

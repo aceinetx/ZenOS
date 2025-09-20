@@ -2,7 +2,7 @@ use crate::lang::ast::*;
 use crate::lang::tokenizer::*;
 use alloc::boxed::*;
 use alloc::vec::*;
-use uefi_services::*;
+use uefi::println;
 
 pub struct Parser<'a> {
     pub root: root::AstRoot,

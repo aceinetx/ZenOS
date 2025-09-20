@@ -1,7 +1,7 @@
 use crate::init::*;
 use crate::mem::shared_alloc::*;
 use crate::text;
-use uefi_services::*;
+use uefi::println;
 
 pub fn init() -> Result<(), &'static str> {
     text::clear();

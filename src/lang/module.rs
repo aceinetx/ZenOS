@@ -2,7 +2,7 @@ use crate::lang::opcode::Opcode;
 use alloc::string::String;
 use alloc::vec::Vec;
 use bincode::*;
-use uefi_services::*;
+use uefi::{print, println};
 
 #[derive(Encode, Decode, Debug)]
 pub struct Module {
