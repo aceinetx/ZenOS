@@ -1,12 +1,2 @@
-pub mod ast;
-pub mod compiler;
-pub mod kernel_interpreter;
-pub mod module;
-pub mod opcode;
-pub mod parser;
-pub mod scope;
-pub mod stdlib;
-pub mod strong_u64;
-pub mod tokenizer;
-pub mod value;
-pub mod vm;
+mod platform;
+pub use platform::*;

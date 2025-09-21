@@ -1,22 +1,32 @@
-use crate::lang::{
-    compiler, parser, stdlib::compile_stdlib_module, strong_u64::U64BitsControl, tokenizer, vm,
-};
+use crate::lang::Platform;
+use alloc::boxed::*;
 use alloc::string::*;
 use uefi::*;
+use zenlang::{
+    compiler, parser, stdlib::compile_stdlib_module, strong_u64::U64BitsControl, tokenizer, vm,
+};
 
 pub fn run_code(code: String) {
     let mut tokenizer = tokenizer::Tokenizer::new(code);
     let mut parser = parser::Parser::new(&mut tokenizer);
     let mut compiler = compiler::Compiler::new(&mut parser);
+
+    // compile the code
     if let Err(e) = compiler.compile() {
         println!("compilation error: {}", e);
         return;
     }
 
+    // get modules
     let module = compiler.get_module();
     let mut stdlib = compile_stdlib_module();
 
+    // create VM
     let mut vm = vm::VM::new();
+    // set the platform
+    vm.platform = Some(Box::new(Platform::new()));
+
+    // load modules
     vm.load_module(module);
     vm.load_module(&mut stdlib);
 
@@ -42,7 +52,7 @@ pub fn run_code(code: String) {
         println!("-- end runtime error --");
         return;
     }
-    println!("ret: {}", vm.ret);
+    println!("returned {}", vm.ret);
 }
 
 pub fn main() -> Result<(), &'static str> {
@@ -54,7 +64,6 @@ pub fn main() -> Result<(), &'static str> {
 "#
         .into(),
     );
-    //crate::lang::kernel_interpreter::kernel_interpreter();
 
     Ok(())
 }

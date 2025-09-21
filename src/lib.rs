@@ -6,5 +6,4 @@ pub mod io;
 pub mod lang;
 pub mod mem;
 pub mod text;
-pub use crate::lang::ast;
 extern crate alloc;
