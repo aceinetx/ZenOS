@@ -10,6 +10,12 @@ pub fn get_char() -> Key {
     loop {
         key = get_char_unlocked();
         if let Key::Printable(k) = key {
+            let ch: char = k.into();
+            if ch == '\r' {
+                // newline endings are in CRLF, turn them into LF
+                key = Key::Printable(Char16::try_from('\n').unwrap());
+            }
+
             if k != null_char {
                 break;
             }
@@ -22,28 +28,34 @@ pub fn get_char() -> Key {
 pub fn get_char_unlocked() -> Key {
     unsafe {
         let st = globals::get_system_table();
-        let stdin = st.stdin;
+
+        let stdin_ptr = st.stdin;
+        let stdin = st.stdin.as_ref().unwrap();
+
         let mut input_key: InputKey = InputKey::default();
-        let _ = ((*stdin).read_key_stroke)(stdin, &mut input_key);
+        let _ = (stdin.read_key_stroke)(stdin_ptr, &mut input_key);
         return input_key.into();
     }
 }
 
 pub fn get_string() -> String {
+    let backspace = Char16::try_from(8u16).unwrap();
     let mut string = String::new();
     loop {
         let key = get_char();
         match key {
             Key::Printable(key) => {
-                let mut ch: char = key.into();
-                if ch == '\r' {
-                    ch = '\n';
-                }
+                let ch: char = key.into();
                 print!("{}", ch);
                 if ch == '\n' {
                     break;
                 }
-                string.push(ch);
+
+                if key != backspace {
+                    string.push(ch);
+                } else {
+                    string.pop();
+                }
             }
             Key::Special(_) => {}
         }

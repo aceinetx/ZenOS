@@ -30,8 +30,13 @@ pub fn kernel_interpreter() {
 
         let module = compiler.get_module();
 
+        vm.error.clear();
         for opcode in module.opcodes.iter() {
             vm.execute_opcode(opcode);
+            if !vm.error.is_empty() {
+                println!("runtime error: {}", vm.error);
+                break;
+            }
 
             if matches!(opcode, Opcode::Ret()) {
                 println!("returned {}", vm.ret);
