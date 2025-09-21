@@ -49,15 +49,12 @@ pub fn main() -> Result<(), &'static str> {
     run_code(
         r#"
 fn main {
-    let arr = ["Hello", "World"];
-    println(arr[0]);
-    println(arr[1]);
-    return Null;
+    let arr = [["Hello", 123], "World"];
+    return arr;
 } 
 "#
         .into(),
     );
-    //kernel_interpreter();
 
     Ok(())
 }

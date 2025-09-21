@@ -24,8 +24,19 @@ impl Display for Value {
             Value::Boolean(boolean) => {
                 return write!(f, "{}", boolean);
             }
-            Value::Array(_array) => {
-                return write!(f, "[array]");
+            Value::Array(array) => {
+                let _ = write!(f, "[");
+
+                let len = array.len();
+                for i in 0..len {
+                    let _ = write!(f, "{}", array[i]);
+                    if i != len - 1 {
+                        let _ = write!(f, ", ");
+                    }
+                }
+
+                let _ = write!(f, "]");
+                Ok(())
             }
             Value::FunctionRef(addr, args_count) => {
                 return write!(f, "[function at {} with {} arguments]", addr, args_count);
