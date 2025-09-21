@@ -1,3 +1,4 @@
+use crate::lang::module::ModuleFunction;
 use crate::lang::{ast::node::Compile, opcode::Opcode};
 use alloc::string::*;
 use alloc::vec::*;
@@ -30,7 +31,11 @@ impl Compile for AstFunction {
         let module = compiler.get_module();
         {
             let name = self.name.to_string();
-            module.functions.push((name, module.opcodes.len() as u32));
+            module.functions.push(ModuleFunction::new(
+                name,
+                module.opcodes.len() as u32,
+                self.args.len() as u64,
+            ));
         }
         //module.opcodes.push(Opcode::Scopenew());
 

@@ -32,18 +32,27 @@ impl Compile for AstFuncCall {
         &mut self,
         compiler: &mut crate::lang::compiler::Compiler,
     ) -> Result<(), alloc::string::String> {
+        {
+            let module = compiler.get_module();
+            module.opcodes.push(Opcode::Bfas());
+        }
+
         for arg in self.args.iter_mut() {
             if let Err(e) = arg.compile(compiler) {
                 return Err(e);
             }
         }
 
-        let module = compiler.get_module();
-        module.opcodes.push(Opcode::Loadv(self.name.clone()));
-        module.opcodes.push(Opcode::Call());
-        if self.do_push {
-            module.opcodes.push(Opcode::Pushret());
+        {
+            let module = compiler.get_module();
+            module.opcodes.push(Opcode::Efas());
+            module.opcodes.push(Opcode::Loadv(self.name.clone()));
+            module.opcodes.push(Opcode::Call());
+            if self.do_push {
+                module.opcodes.push(Opcode::Pushret());
+            }
         }
+
         Ok(())
     }
 }

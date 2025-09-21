@@ -5,9 +5,26 @@ use bincode::*;
 use uefi::{print, println};
 
 #[derive(Encode, Decode, Debug)]
+pub struct ModuleFunction {
+    pub name: String,
+    pub addr: u32,
+    pub args_count: u64,
+}
+
+impl ModuleFunction {
+    pub fn new(name: String, addr: u32, args_count: u64) -> ModuleFunction {
+        return ModuleFunction {
+            name: name,
+            addr: addr,
+            args_count: args_count,
+        };
+    }
+}
+
+#[derive(Encode, Decode, Debug)]
 pub struct Module {
     pub opcodes: Vec<Opcode>,
-    pub functions: Vec<(String, u32)>,
+    pub functions: Vec<ModuleFunction>,
 }
 
 impl Module {

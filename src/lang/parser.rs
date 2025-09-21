@@ -85,6 +85,14 @@ impl<'a> Parser<'_> {
                 self.next();
                 //println!("next {:?}", self.current_token);
             }
+            Token::String(string) => {
+                let mut node = string::AstString::new();
+                node.string = string;
+                left = Box::new(node);
+
+                self.next();
+                //println!("next {:?}", self.current_token);
+            }
             Token::Lparen => {
                 //println!("lparen");
                 self.next();

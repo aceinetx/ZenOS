@@ -1,3 +1,4 @@
+use crate::io::get_string;
 use crate::lang::ast::binop::AstBinopOp;
 use crate::lang::module::Module;
 use crate::lang::opcode::Opcode;
@@ -7,11 +8,12 @@ use crate::lang::value::*;
 use alloc::format;
 use alloc::string::*;
 use alloc::vec::*;
+use uefi::{print, println};
 
 static MAX_STACK_SIZE: usize = 1000;
 
 pub struct VM<'a> {
-    modules: Vec<&'a mut Module>,
+    pub modules: Vec<&'a mut Module>,
     pub pc: u64,
     pub stack: Vec<Value>,
     pub call_stack: Vec<u64>,
@@ -19,6 +21,8 @@ pub struct VM<'a> {
     pub error: String,
     pub zero: u64,
     pub ret: Value,
+    bfas_stack_start: i64,
+    bfas_stack_end: i64,
 }
 
 impl<'a> VM<'a> {
@@ -32,6 +36,8 @@ impl<'a> VM<'a> {
             error: String::new(),
             zero: 0,
             ret: Value::Null(),
+            bfas_stack_start: 0,
+            bfas_stack_end: 0,
         };
     }
 
@@ -43,8 +49,8 @@ impl<'a> VM<'a> {
         for i in 0..self.modules.len() {
             let module = &self.modules[i];
             for function in module.functions.iter() {
-                if function.0 == entry_fn_name {
-                    self.pc.set_low(function.1 as u32);
+                if function.name == entry_fn_name {
+                    self.pc.set_low(function.addr as u32);
                     self.pc.set_high(i as u32);
                     self.add_scope();
                     return Ok(());
@@ -120,16 +126,55 @@ impl<'a> VM<'a> {
         self.scopes.pop();
     }
 
+    pub fn vmcall(&mut self, index: u8) {
+        match index {
+            1 => {
+                if let Some(value) = self.stack.pop() {
+                    if let Value::String(s) = value {
+                        print!("{}", s);
+                        return;
+                    }
+                }
+                self.error = "vmcall: expected string in stack".into();
+            }
+            2 => {
+                if let Some(value) = self.stack.pop() {
+                    if let Value::String(s) = value {
+                        println!("{}", s);
+                        return;
+                    }
+                }
+                self.error = "vmcall: expected string in stack".into();
+            }
+            3 => {
+                let string = get_string();
+                let value = Value::String(string);
+                self.stack.push(value);
+            }
+            _ => {
+                self.error = format!("vmcall: invalid vmcall index {}", index);
+            }
+        }
+    }
+
     pub fn execute_opcode(&mut self, opcode: &Opcode) {
         match opcode {
             Opcode::Call() => {
                 if let Some(value) = self.stack.pop() {
-                    if let Value::FunctionRef(addr) = value {
+                    if let Value::FunctionRef(addr, args_count) = value {
                         self.call_stack.push(self.pc);
                         self.check_stack_overflow();
                         self.pc = addr;
                         self.pc.sub_low(1);
                         self.add_scope();
+
+                        let diff = self.bfas_stack_end - self.bfas_stack_start;
+                        if diff != args_count as i64 {
+                            self.error = format!(
+                                "call: expected exactly {} arguments, but provided {}",
+                                args_count, diff
+                            );
+                        }
                     } else {
                         self.error = "call: value on stack is not a function reference".into();
                     }
@@ -137,8 +182,16 @@ impl<'a> VM<'a> {
                     self.error = "call: stack is empty".into();
                 }
             }
+            Opcode::Vmcall(index) => {
+                self.vmcall(*index);
+            }
             Opcode::Loadcn(value) => {
                 let value = Value::Number(*value);
+                self.stack.push(value);
+                self.check_stack_overflow();
+            }
+            Opcode::Loadcs(value) => {
+                let value = Value::String(value.to_string());
                 self.stack.push(value);
                 self.check_stack_overflow();
             }
@@ -155,11 +208,11 @@ impl<'a> VM<'a> {
                 for module_i in 0..self.modules.len() {
                     let module = &self.modules[module_i];
                     for func in module.functions.iter() {
-                        if func.0.to_string() == name.to_string() {
+                        if func.name.to_string() == name.to_string() {
                             let mut addr: u64 = 0;
-                            addr.set_low(func.1);
+                            addr.set_low(func.addr);
                             addr.set_high(module_i as u32);
-                            self.stack.push(Value::FunctionRef(addr));
+                            self.stack.push(Value::FunctionRef(addr, func.args_count));
                             self.check_stack_overflow();
                             return;
                         }
@@ -188,6 +241,12 @@ impl<'a> VM<'a> {
             Opcode::Pushret() => {
                 // do smth with the clone
                 self.stack.push(self.ret.clone());
+            }
+            Opcode::Bfas() => {
+                self.bfas_stack_start = self.stack.len() as i64;
+            }
+            Opcode::Efas() => {
+                self.bfas_stack_end = self.stack.len() as i64;
             }
             Opcode::Pop() => {
                 if self.stack.is_empty() {

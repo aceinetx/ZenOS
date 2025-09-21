@@ -75,6 +75,24 @@ impl Tokenizer {
         return Token::Identifier(identifier);
     }
 
+    fn string(&mut self) -> Token {
+        let mut string = String::new();
+        self.pos += 1;
+        while self.pos < self.code.len() {
+            let c = self.code.chars().nth(self.pos).unwrap();
+            if c == '"' {
+                self.pos += 1;
+                break;
+            }
+
+            string.push(c);
+
+            self.pos += 1;
+        }
+
+        return Token::String(string);
+    }
+
     pub fn peek(&mut self) -> Token {
         let pos = self.pos;
         let token = self.next();
@@ -109,6 +127,9 @@ impl Tokenizer {
                         token = Token::Let;
                     }
                 }
+                return token;
+            } else if c == '"' {
+                let token = self.string();
                 return token;
             } else if c == '{' {
                 self.pos += 1;

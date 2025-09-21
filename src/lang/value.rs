@@ -8,7 +8,7 @@ pub enum Value {
     String(String),
     Boolean(bool),
     Array(Vec<Value>),
-    FunctionRef(u64),
+    FunctionRef(u64, u64),
     Null(),
 }
 
@@ -27,8 +27,8 @@ impl Display for Value {
             Value::Array(_array) => {
                 return write!(f, "[array]");
             }
-            Value::FunctionRef(_addr) => {
-                return write!(f, "[reference to a function]");
+            Value::FunctionRef(addr, args_count) => {
+                return write!(f, "[function at {} with {} arguments]", addr, args_count);
             }
             Value::Null() => {
                 return write!(f, "Null");

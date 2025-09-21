@@ -5,5 +5,6 @@ pub mod node;
 pub mod number;
 pub mod ret;
 pub mod root;
+pub mod string;
 pub mod var_assign;
 pub mod var_ref;
