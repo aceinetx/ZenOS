@@ -2,6 +2,8 @@ use alloc::string::*;
 use alloc::vec::*;
 use core::fmt::Display;
 
+use crate::lang::strong_u64::U64BitsControl;
+
 #[derive(Clone, Debug)]
 pub enum Value {
     Number(f64),
@@ -39,7 +41,13 @@ impl Display for Value {
                 Ok(())
             }
             Value::FunctionRef(addr, args_count) => {
-                return write!(f, "[function at {} with {} arguments]", addr, args_count);
+                return write!(
+                    f,
+                    "[function at 0x{:?} in module {} with {} arguments]",
+                    addr.get_low(),
+                    addr.get_high(),
+                    args_count
+                );
             }
             Value::Null() => {
                 return write!(f, "Null");
