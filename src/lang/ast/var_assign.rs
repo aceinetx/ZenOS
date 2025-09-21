@@ -1,5 +1,4 @@
 use crate::lang::ast::node::Compile;
-use crate::lang::register::Register;
 use alloc::string::String;
 use alloc::vec::*;
 
@@ -34,11 +33,7 @@ impl Compile for AstAssign {
             return Err("expr is None".into());
         }
 
-        //let opcode;
-        let reg = Register::R(compiler.registers.pop().unwrap());
-
-        let module = compiler.get_module();
-        //module.opcodes.push(opcode);
+        let _module = compiler.get_module();
 
         Ok(())
     }

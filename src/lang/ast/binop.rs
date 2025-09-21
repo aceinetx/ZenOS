@@ -1,4 +1,3 @@
-use crate::lang::register::Register;
 use crate::lang::{ast::node::Compile, opcode::Opcode};
 use alloc::vec::*;
 

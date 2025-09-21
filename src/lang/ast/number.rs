@@ -1,6 +1,5 @@
 use crate::lang::ast::node::Compile;
 use crate::lang::opcode::Opcode;
-use crate::lang::register::Register;
 use alloc::vec::*;
 
 pub struct AstNumber {
