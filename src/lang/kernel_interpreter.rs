@@ -1,8 +1,7 @@
 use crate::io::*;
 use crate::lang::opcode::Opcode;
 use crate::lang::{
-    compiler::Compiler, module::Module, parser::Parser, scope::Scope, strong_u64::*,
-    tokenizer::Tokenizer, vm::VM,
+    compiler::Compiler, parser::Parser, scope::Scope, strong_u64::*, tokenizer::Tokenizer, vm::VM,
 };
 use alloc::format;
 use uefi::{print, println};

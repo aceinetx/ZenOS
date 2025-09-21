@@ -24,10 +24,10 @@ impl Display for Value {
             Value::Boolean(boolean) => {
                 return write!(f, "{}", boolean);
             }
-            Value::Array(array) => {
+            Value::Array(_array) => {
                 return write!(f, "[array]");
             }
-            Value::FunctionRef(addr) => {
+            Value::FunctionRef(_addr) => {
                 return write!(f, "[reference to a function]");
             }
             Value::Null() => {
