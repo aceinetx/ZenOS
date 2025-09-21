@@ -281,11 +281,7 @@ impl<'a> VM<'a> {
                     if let Value::Number(index) = index {
                         let usize_index = index as usize;
                         if usize_index >= array.len() {
-                            self.error = format!(
-                                "iafs failed: index ({}) is larger or equal to array length ({})",
-                                usize_index,
-                                array.len()
-                            );
+                            self.stack.push(Value::Null());
                             return;
                         }
 

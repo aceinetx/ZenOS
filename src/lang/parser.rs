@@ -47,10 +47,10 @@ impl<'a> Parser<'_> {
     pub fn parse_expression(
         &mut self,
         min_prec: i32,
-        initial: bool,
+        step_token: bool,
     ) -> Result<Box<dyn node::Compile>, &'static str> {
         let mut token;
-        if initial {
+        if step_token {
             token = self.next();
         } else {
             token = self.current_token.clone();
@@ -58,6 +58,7 @@ impl<'a> Parser<'_> {
 
         let mut left: Box<dyn node::Compile>;
 
+        // * Parse base value
         match token {
             Token::Operator(_) => {
                 let prec = self.get_token_precedence(&token).unwrap();
@@ -188,6 +189,7 @@ impl<'a> Parser<'_> {
             }
         }
 
+        // * Parse operators
         loop {
             token = self.current_token.clone();
             if let Token::Operator(op) = token {
