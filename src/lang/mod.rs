@@ -1,5 +1,6 @@
 pub mod ast;
 pub mod compiler;
+pub mod kernel_interpreter;
 pub mod module;
 pub mod opcode;
 pub mod parser;

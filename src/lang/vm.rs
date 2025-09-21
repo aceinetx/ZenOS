@@ -101,7 +101,7 @@ impl<'a> VM<'a> {
         return self.compute_values(left, right, op);
     }
 
-    fn execute_opcode(&mut self, opcode: &Opcode) {
+    pub fn execute_opcode(&mut self, opcode: &Opcode) {
         match opcode {
             Opcode::Loadcn(value) => {
                 let value = Value::Number(*value);
