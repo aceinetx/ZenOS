@@ -10,12 +10,6 @@ pub fn get_char() -> Key {
     loop {
         key = get_char_unlocked();
         if let Key::Printable(k) = key {
-            let ch: char = k.into();
-            if ch == '\r' {
-                // newline endings are in CRLF, turn them into LF
-                key = Key::Printable(Char16::try_from('\n').unwrap());
-            }
-
             if k != null_char {
                 break;
             }
@@ -32,9 +26,21 @@ pub fn get_char_unlocked() -> Key {
         let stdin_ptr = st.stdin;
         let stdin = st.stdin.as_ref().unwrap();
 
-        let mut input_key: InputKey = InputKey::default();
-        let _ = (stdin.read_key_stroke)(stdin_ptr, &mut input_key);
-        return input_key.into();
+        let mut key: Key;
+        {
+            let mut input_key: InputKey = InputKey::default();
+            let _ = (stdin.read_key_stroke)(stdin_ptr, &mut input_key);
+            key = input_key.into();
+        }
+
+        if let Key::Printable(k) = key {
+            let ch: char = k.into();
+            if ch == '\r' {
+                // newline endings are in CRLF, turn them into LF
+                key = Key::Printable(Char16::try_from('\n').unwrap());
+            }
+        }
+        return key;
     }
 }
 
