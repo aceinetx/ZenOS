@@ -2,7 +2,7 @@ use crate::lang::ast::*;
 use crate::lang::tokenizer::*;
 use alloc::boxed::*;
 use alloc::vec::*;
-use uefi::println;
+//use uefi::println;
 
 pub struct Parser<'a> {
     pub root: root::AstRoot,
@@ -212,7 +212,7 @@ impl<'a> Parser<'_> {
                 return Ok(None);
             }
             _ => {
-                println!("{:?}", token);
+                //println!("{:?}", token);
                 return Err("unexpected statement token");
             }
         }
@@ -274,7 +274,7 @@ impl<'a> Parser<'_> {
 
         let mut token = self.next();
         while !matches!(token, Token::EOF) {
-            println!("tkn: {:?}", token);
+            //println!("tkn: {:?}", token);
             match token {
                 Token::Fn => {
                     if let Err(e) = self.parse_function() {

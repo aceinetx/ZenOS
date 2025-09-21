@@ -17,7 +17,6 @@ pub fn kernel_interpreter() {
         print!("zenlang (kernel) > ");
         let mut code = get_string();
         code = format!("fn main {{ {} }}", code);
-        println!("compiling {}", code);
 
         // compile
         let mut tokenizer = Tokenizer::new(code);
