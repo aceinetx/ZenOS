@@ -248,6 +248,53 @@ impl<'a> VM<'a> {
                 // do smth with the clone
                 self.stack.push(self.ret.clone());
             }
+            Opcode::Cafse(items) => {
+                let mut vec = Vec::<Value>::new();
+                for _ in 0..*items {
+                    if let Some(stack_value) = self.stack.pop() {
+                        vec.insert(0, stack_value);
+                    } else {
+                        self.error = format!("cafse failed: no more values on stack");
+                        return;
+                    }
+                }
+                let value = Value::Array(vec);
+                self.stack.push(value);
+            }
+            Opcode::Iafs() => {
+                let array;
+                let index;
+                if let Some(value) = self.stack.pop() {
+                    index = value;
+                } else {
+                    self.error = format!("iafs failed: no more values on stack for index");
+                    return;
+                }
+                if let Some(value) = self.stack.pop() {
+                    array = value;
+                } else {
+                    self.error = format!("iafs failed: no more values on stack for array");
+                    return;
+                }
+
+                if let Value::Array(array) = array {
+                    if let Value::Number(index) = index {
+                        let usize_index = index as usize;
+                        if usize_index >= array.len() {
+                            self.error = format!(
+                                "iafs failed: index ({}) is larger or equal to array length ({})",
+                                usize_index,
+                                array.len()
+                            );
+                            return;
+                        }
+
+                        self.stack.push(array[usize_index].clone());
+                        return;
+                    }
+                }
+                self.error = format!("iafs failed: invalid operand types");
+            }
             Opcode::Bfas() => {
                 self.bfas_stack_start = self.stack.len() as i64;
             }

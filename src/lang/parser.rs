@@ -2,6 +2,7 @@ use crate::lang::ast::*;
 use crate::lang::tokenizer::*;
 use alloc::boxed::*;
 use alloc::vec::*;
+use uefi::println;
 
 pub struct Parser<'a> {
     pub root: root::AstRoot,
@@ -77,13 +78,44 @@ impl<'a> Parser<'_> {
                     }
                 }
             }
+            Token::Lbracket => {
+                // parse array
+                let mut node = array::AstArray::new();
+
+                loop {
+                    println!("loop");
+                    self.next();
+                    if matches!(self.current_token, Token::Rbracket) {
+                        break;
+                    }
+
+                    match self.parse_expression(0, false) {
+                        Err(e) => {
+                            return Err(e);
+                        }
+                        Ok(expr) => {
+                            node.values.push(expr);
+                        }
+                    }
+
+                    if matches!(self.current_token, Token::Rbracket) {
+                        break;
+                    }
+                    if !matches!(self.current_token, Token::Comma) {
+                        println!("{:?}", self.current_token);
+                        return Err("expected `,` after array item: [ <ITEMS> [HERE] ]");
+                    }
+                }
+
+                self.next();
+                left = Box::new(node);
+            }
             Token::Number(num) => {
                 let mut node = number::AstNumber::new();
                 node.number = num;
                 left = Box::new(node);
 
                 self.next();
-                //println!("next {:?}", self.current_token);
             }
             Token::String(string) => {
                 let mut node = string::AstString::new();
@@ -206,6 +238,19 @@ impl<'a> Parser<'_> {
                         break;
                     }
                 }
+            } else if let Token::Lbracket = token {
+                match self.parse_expression(0, true) {
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    Ok(index) => {
+                        let mut node = array_index::AstArrayIndex::new();
+                        node.array = Some(left);
+                        node.index = Some(index);
+                        left = Box::new(node);
+                    }
+                }
+                self.next();
             } else {
                 break;
             }

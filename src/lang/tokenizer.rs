@@ -15,6 +15,8 @@ pub enum Token {
     Rbrace,
     Lparen,
     Rparen,
+    Lbracket,
+    Rbracket,
     Semicolon,
     Comma,
     Assign,
@@ -173,6 +175,12 @@ impl Tokenizer {
             } else if c == ')' {
                 self.pos += 1;
                 return Token::Rparen;
+            } else if c == '[' {
+                self.pos += 1;
+                return Token::Lbracket;
+            } else if c == ']' {
+                self.pos += 1;
+                return Token::Rbracket;
             } else if c == '=' {
                 self.pos += 1;
                 return Token::Assign;
