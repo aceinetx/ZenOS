@@ -2,7 +2,6 @@ use crate::lang::ast::*;
 use crate::lang::tokenizer::*;
 use alloc::boxed::*;
 use alloc::vec::*;
-use uefi::println;
 
 pub struct Parser<'a> {
     pub root: root::AstRoot,
@@ -83,7 +82,6 @@ impl<'a> Parser<'_> {
                 let mut node = array::AstArray::new();
 
                 loop {
-                    println!("loop");
                     self.next();
                     if matches!(self.current_token, Token::Rbracket) {
                         break;
@@ -102,7 +100,6 @@ impl<'a> Parser<'_> {
                         break;
                     }
                     if !matches!(self.current_token, Token::Comma) {
-                        println!("{:?}", self.current_token);
                         return Err("expected `,` after array item: [ <ITEMS> [HERE] ]");
                     }
                 }

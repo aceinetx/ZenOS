@@ -49,7 +49,10 @@ pub fn main() -> Result<(), &'static str> {
     run_code(
         r#"
 fn main {
-    return [69][0];
+    let arr = ["Hello", "World"];
+    println(arr[0]);
+    println(arr[1]);
+    return Null;
 } 
 "#
         .into(),
