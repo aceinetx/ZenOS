@@ -11,14 +11,18 @@ pub fn compile_stdlib_module() -> Module {
         1,
     ));
     module.opcodes.push(Opcode::Vmcall(1));
+    module.opcodes.push(Opcode::Loadcnu());
     module.opcodes.push(Opcode::Ret());
+
     module.functions.push(ModuleFunction::new(
         "println".into(),
         module.opcodes.len() as u32,
         1,
     ));
     module.opcodes.push(Opcode::Vmcall(2));
+    module.opcodes.push(Opcode::Loadcnu());
     module.opcodes.push(Opcode::Ret());
+
     module.functions.push(ModuleFunction::new(
         "get_string".into(),
         module.opcodes.len() as u32,
