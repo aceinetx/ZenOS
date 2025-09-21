@@ -190,6 +190,10 @@ impl<'a> VM<'a> {
                 self.stack.push(value);
                 self.check_stack_overflow();
             }
+            Opcode::Loadcnu() => {
+                self.stack.push(Value::Null());
+                self.check_stack_overflow();
+            }
             Opcode::Loadcs(value) => {
                 let value = Value::String(value.to_string());
                 self.stack.push(value);

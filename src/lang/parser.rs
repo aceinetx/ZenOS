@@ -155,6 +155,12 @@ impl<'a> Parser<'_> {
                     self.next();
                 }
             }
+            Token::Null => {
+                let node = null::AstNull::new();
+                left = Box::new(node);
+
+                self.next();
+            }
             _ => {
                 //println!("{:?}", token);
                 return Err("unexpected token in parse_expression");

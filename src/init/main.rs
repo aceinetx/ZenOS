@@ -49,7 +49,7 @@ pub fn main() -> Result<(), &'static str> {
     run_code(
         r#"
 fn main {
-    return 69.123;
+    return Null;
 } 
 "#
         .into(),
