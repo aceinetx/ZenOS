@@ -14,6 +14,7 @@ pub enum Token {
     Lparen,
     Rparen,
     Semicolon,
+    Comma,
     Assign,
     EOF,
 }
@@ -74,6 +75,23 @@ impl Tokenizer {
         return Token::Identifier(identifier);
     }
 
+    pub fn peek(&mut self) -> Token {
+        let pos = self.pos;
+        let token = self.next();
+        self.pos = pos;
+        return token;
+    }
+
+    pub fn peek_n(&mut self, n: usize) -> Token {
+        let pos = self.pos;
+        let mut token: Token = Token::EOF;
+        for _ in 0..n {
+            token = self.next();
+        }
+        self.pos = pos;
+        return token;
+    }
+
     pub fn next(&mut self) -> Token {
         while self.pos < self.code.len() {
             let c = self.code.chars().nth(self.pos).unwrap();
@@ -101,6 +119,9 @@ impl Tokenizer {
             } else if c == ';' {
                 self.pos += 1;
                 return Token::Semicolon;
+            } else if c == ',' {
+                self.pos += 1;
+                return Token::Comma;
             } else if ['+', '-', '*', '/'].contains(&c) {
                 self.pos += 1;
                 return Token::Operator(c);

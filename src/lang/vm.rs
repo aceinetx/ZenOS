@@ -8,6 +8,8 @@ use alloc::format;
 use alloc::string::*;
 use alloc::vec::*;
 
+static MAX_STACK_SIZE: usize = 1000;
+
 pub struct VM<'a> {
     modules: Vec<&'a mut Module>,
     pub pc: u64,
@@ -44,7 +46,7 @@ impl<'a> VM<'a> {
                 if function.0 == entry_fn_name {
                     self.pc.set_low(function.1 as u32);
                     self.pc.set_high(i as u32);
-                    self.scopes.push(Scope::new());
+                    self.add_scope();
                     return Ok(());
                 }
             }
@@ -101,21 +103,69 @@ impl<'a> VM<'a> {
         return self.compute_values(left, right, op);
     }
 
+    pub fn check_stack_overflow(&mut self) {
+        if self.call_stack.len() >= MAX_STACK_SIZE {
+            self.error = "call stack overflow".into();
+        }
+        if self.stack.len() >= MAX_STACK_SIZE {
+            self.error = "call stack overflow".into();
+        }
+    }
+
+    fn add_scope(&mut self) {
+        self.scopes.push(Scope::new());
+    }
+
+    fn remove_scope(&mut self) {
+        self.scopes.pop();
+    }
+
     pub fn execute_opcode(&mut self, opcode: &Opcode) {
         match opcode {
+            Opcode::Call() => {
+                if let Some(value) = self.stack.pop() {
+                    if let Value::FunctionRef(addr) = value {
+                        self.call_stack.push(self.pc);
+                        self.check_stack_overflow();
+                        self.pc = addr;
+                        self.pc.sub_low(1);
+                        self.add_scope();
+                    } else {
+                        self.error = "call: value on stack is not a function reference".into();
+                    }
+                } else {
+                    self.error = "call: stack is empty".into();
+                }
+            }
             Opcode::Loadcn(value) => {
                 let value = Value::Number(*value);
                 self.stack.push(value);
+                self.check_stack_overflow();
             }
             Opcode::Loadv(name) => {
                 // do something with the clone here
                 if let Some(scope) = self.scopes.last() {
                     if let Some(value) = scope.get(name) {
                         self.stack.push(value.clone());
+                        self.check_stack_overflow();
                         return;
                     }
                 }
-                self.error = format!("unknown variable: {}", name);
+
+                for module_i in 0..self.modules.len() {
+                    let module = &self.modules[module_i];
+                    for func in module.functions.iter() {
+                        if func.0.to_string() == name.to_string() {
+                            let mut addr: u64 = 0;
+                            addr.set_low(func.1);
+                            addr.set_high(module_i as u32);
+                            self.stack.push(Value::FunctionRef(addr));
+                            self.check_stack_overflow();
+                            return;
+                        }
+                    }
+                }
+                self.error = format!("unknown variable or function: {}", name);
             }
             Opcode::Storev(name) => {
                 // do something with the clone here
@@ -128,9 +178,22 @@ impl<'a> VM<'a> {
                         }
                     } else {
                         self.error = format!("storev failed: scopes is empty");
+                        return;
                     }
                 } else {
                     self.error = format!("storev failed: no value in stack");
+                    return;
+                }
+            }
+            Opcode::Pushret() => {
+                // do smth with the clone
+                self.stack.push(self.ret.clone());
+            }
+            Opcode::Pop() => {
+                if self.stack.is_empty() {
+                    self.error = format!("pop failed: no value in stack");
+                } else {
+                    self.stack.pop();
                 }
             }
             Opcode::Add() => {
@@ -154,6 +217,8 @@ impl<'a> VM<'a> {
                     self.ret = self.stack.pop().unwrap();
                 }
 
+                self.remove_scope();
+
                 if !self.call_stack.is_empty() {
                     self.pc = self.call_stack.pop().unwrap();
                 } else {
@@ -175,16 +240,16 @@ impl<'a> VM<'a> {
             return false;
         }
 
-        let module = core::mem::take(self.modules[module_index]);
-        if opcode_index >= module.opcodes.len() as u32 {
+        let opcodes = core::mem::take(&mut self.modules[module_index].opcodes);
+        if opcode_index >= opcodes.len() as u32 {
             return false;
         }
 
-        let opcode = module.get_opcode(opcode_index);
+        let opcode = &opcodes[opcode_index as usize];
 
         self.execute_opcode(opcode);
 
-        *self.modules[module_index as usize] = module;
+        self.modules[module_index].opcodes = opcodes;
 
         self.pc.add_low(1);
 

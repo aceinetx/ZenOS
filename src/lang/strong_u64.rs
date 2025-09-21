@@ -38,16 +38,16 @@ impl U64BitsControl for u64 {
 
     // low/high bits operation functions
     fn add_low(&mut self, n: u32) {
-        self.set_low(self.get_low() + n);
+        self.set_low(self.get_low().wrapping_add(n));
     }
     fn add_high(&mut self, n: u32) {
-        self.set_high(self.get_high() + n);
+        self.set_high(self.get_high().wrapping_add(n));
     }
 
     fn sub_low(&mut self, n: u32) {
-        self.set_low(self.get_low() - n);
+        self.set_low(self.get_low().wrapping_sub(n));
     }
     fn sub_high(&mut self, n: u32) {
-        self.set_high(self.get_high() - n);
+        self.set_high(self.get_high().wrapping_sub(n));
     }
 }

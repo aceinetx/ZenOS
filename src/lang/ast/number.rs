@@ -4,11 +4,15 @@ use alloc::vec::*;
 
 pub struct AstNumber {
     pub number: f64,
+    do_push: bool,
 }
 
 impl AstNumber {
     pub fn new() -> Self {
-        return Self { number: 0.0 };
+        return Self {
+            number: 0.0,
+            do_push: true,
+        };
     }
 }
 
@@ -22,7 +26,9 @@ impl Compile for AstNumber {
         compiler: &mut crate::lang::compiler::Compiler,
     ) -> Result<(), alloc::string::String> {
         let module = compiler.get_module();
-        module.opcodes.push(Opcode::Loadcn(self.number));
+        if self.do_push {
+            module.opcodes.push(Opcode::Loadcn(self.number));
+        }
 
         Ok(())
     }

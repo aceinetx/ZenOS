@@ -1,4 +1,5 @@
 pub mod binop;
+pub mod func_call;
 pub mod function;
 pub mod node;
 pub mod number;

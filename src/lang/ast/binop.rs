@@ -12,6 +12,7 @@ pub struct AstBinop {
     pub left: Option<alloc::boxed::Box<dyn Compile>>,
     pub right: Option<alloc::boxed::Box<dyn Compile>>,
     pub op: AstBinopOp,
+    do_push: bool,
 }
 
 impl AstBinop {
@@ -20,11 +21,16 @@ impl AstBinop {
             left: None,
             right: None,
             op: AstBinopOp::PLUS,
+            do_push: true,
         };
     }
 }
 
 impl Compile for AstBinop {
+    fn disable_push(&mut self) {
+        self.do_push = false;
+    }
+
     fn get_children(&mut self) -> Option<&mut Vec<alloc::boxed::Box<dyn Compile>>> {
         return None;
     }
@@ -67,6 +73,9 @@ impl Compile for AstBinop {
 
         let module = compiler.get_module();
         module.opcodes.push(opcode);
+        if !self.do_push {
+            module.opcodes.push(Opcode::Pop());
+        }
 
         Ok(())
     }

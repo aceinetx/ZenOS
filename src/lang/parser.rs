@@ -2,7 +2,6 @@ use crate::lang::ast::*;
 use crate::lang::tokenizer::*;
 use alloc::boxed::*;
 use alloc::vec::*;
-//use uefi::println;
 
 pub struct Parser<'a> {
     pub root: root::AstRoot,
@@ -104,11 +103,49 @@ impl<'a> Parser<'_> {
                 }
             }
             Token::Identifier(name) => {
-                let mut node = var_ref::AstVarRef::new();
-                node.name = name;
-                left = Box::new(node);
+                // function call
+                if matches!(self.tokenizer.peek(), Token::Lparen) {
+                    self.next();
 
-                self.next();
+                    let mut node = func_call::AstFuncCall::new();
+                    node.name = name;
+
+                    loop {
+                        self.next();
+                        if matches!(self.current_token, Token::Rparen) {
+                            break;
+                        }
+
+                        match self.parse_expression(0, false) {
+                            Err(e) => {
+                                return Err(e);
+                            }
+                            Ok(expr) => {
+                                node.args.push(expr);
+                            }
+                        }
+
+                        token = self.current_token.clone();
+                        if matches!(token, Token::Rparen) {
+                            break;
+                        }
+
+                        if !matches!(token, Token::Comma) {
+                            return Err(
+                                "expected `,` after a function argument: CALL(<args> [HERE])",
+                            );
+                        }
+                    }
+
+                    left = Box::new(node);
+                    self.next();
+                } else {
+                    let mut node = var_ref::AstVarRef::new();
+                    node.name = name;
+                    left = Box::new(node);
+
+                    self.next();
+                }
             }
             _ => {
                 //println!("{:?}", token);
@@ -211,10 +248,20 @@ impl<'a> Parser<'_> {
             Token::Semicolon => {
                 return Ok(None);
             }
-            _ => {
-                //println!("{:?}", token);
-                return Err("unexpected statement token");
-            }
+            _ => match self.parse_expression(0, false) {
+                Err(e) => {
+                    return Err(e);
+                }
+                Ok(mut expr) => {
+                    expr.disable_push();
+
+                    if !matches!(self.current_token, Token::Semicolon) {
+                        return Err("expected semicolon after expression");
+                    }
+
+                    return Ok(Some(expr));
+                }
+            },
         }
         //return Err("parse_statement did not parse any of the above statements");
     }
@@ -249,9 +296,22 @@ impl<'a> Parser<'_> {
             let mut function = function::AstFunction::new();
             function.name = name;
 
-            if !matches!(self.next(), Token::Lbrace) {
-                return Err("expected `{` after fn");
+            loop {
+                let token = self.next();
+                if matches!(token, Token::Lbrace) {
+                    break;
+                }
+
+                if let Token::Identifier(name) = token {
+                    function.args.push(name);
+                } else {
+                    return Err("expected identifier in `fn <args> (HERE)`");
+                }
             }
+
+            //if !matches!(self.next(), Token::Lbrace) {
+            //return Err("expected `{` after fn <args>");
+            //}
 
             match self.parse_block() {
                 Err(e) => {

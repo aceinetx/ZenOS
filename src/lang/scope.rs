@@ -2,6 +2,7 @@ use crate::lang::value::Value;
 use alloc::string::*;
 use alloc::vec::*;
 
+#[derive(Debug)]
 pub struct Scope {
     vars: Vec<(String, Value)>,
 }
