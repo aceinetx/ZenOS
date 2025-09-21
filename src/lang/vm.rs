@@ -295,6 +295,53 @@ impl<'a> VM<'a> {
                 }
                 self.error = format!("iafs failed: invalid operand types");
             }
+            Opcode::Aiafs(name) => {
+                let value;
+                let index;
+                if let Some(value) = self.stack.pop() {
+                    index = value;
+                } else {
+                    self.error = format!("aiafs failed: no more values on stack for index");
+                    return;
+                }
+                if let Some(some_value) = self.stack.pop() {
+                    value = some_value;
+                } else {
+                    self.error = format!("aiafs failed: no more values on stack for array");
+                    return;
+                }
+
+                let array;
+                if let Some(scope) = self.scopes.last_mut() {
+                    if let Some(value) = scope.get_mut(name) {
+                        array = value;
+                    } else {
+                        self.error = format!("aiafs failed: no variable named {}", name);
+                        return;
+                    }
+                } else {
+                    self.error = format!("aiafs failed: no scopes");
+                    return;
+                }
+
+                if let Value::Array(array) = array {
+                    if let Value::Number(index) = index {
+                        let usize_index = index as usize;
+                        if usize_index >= array.len() {
+                            self.error = format!(
+                                "aiafs failed: index ({}) is larger or equal to array length ({})",
+                                usize_index,
+                                array.len()
+                            );
+                            return;
+                        }
+
+                        array[usize_index] = value;
+                        return;
+                    }
+                }
+                self.error = format!("aiafs failed: invalid operand types");
+            }
             Opcode::Bfas() => {
                 self.bfas_stack_start = self.stack.len() as i64;
             }

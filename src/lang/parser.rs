@@ -276,14 +276,43 @@ impl<'a> Parser<'_> {
             },
             Token::Let => {
                 let mut node = var_assign::AstAssign::new();
+                let name;
 
-                if let Token::Identifier(name) = self.next() {
-                    node.name = name;
+                if let Token::Identifier(ident_name) = self.next() {
+                    name = ident_name;
                 } else {
                     return Err("expected identifier after let");
                 }
 
-                if !matches!(self.next(), Token::Assign) {
+                self.next();
+                if matches!(self.current_token, Token::Lbracket) {
+                    let mut node = array_assign::AstArrayAssign::new();
+                    node.name = name;
+
+                    match self.parse_expression(0, true) {
+                        Err(e) => {
+                            return Err(e);
+                        }
+                        Ok(index) => {
+                            node.index = Some(index);
+                        }
+                    }
+
+                    if !matches!(self.next(), Token::Assign) {
+                        return Err("expected `=` after let <ident>[<index>]");
+                    }
+
+                    match self.parse_expression(0, true) {
+                        Err(e) => {
+                            return Err(e);
+                        }
+                        Ok(expr) => {
+                            node.expr = Some(expr);
+                        }
+                    }
+
+                    return Ok(Some(Box::new(node)));
+                } else if !matches!(self.current_token, Token::Assign) {
                     return Err("expected `=` after let <ident>");
                 }
 
@@ -297,6 +326,7 @@ impl<'a> Parser<'_> {
                         }
 
                         node.expr = Some(expr);
+                        node.name = name;
                         return Ok(Some(Box::new(node)));
                     }
                 }

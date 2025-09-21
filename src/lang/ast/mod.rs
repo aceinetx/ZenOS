@@ -1,4 +1,5 @@
 pub mod array;
+pub mod array_assign;
 pub mod array_index;
 pub mod binop;
 pub mod func_call;

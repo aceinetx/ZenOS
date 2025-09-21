@@ -13,9 +13,10 @@ pub enum Opcode {
     Pushret(),      // push the ret register
     Cafse(u64),     // construct array from stack elements
     Iafs(),         // Index array from stack
-    Bfas(),         // Begin function arguments setup
-    Efas(),         // End function arguments setup
-    Pop(),          // pop from stack
+    Aiafs(String),
+    Bfas(), // Begin function arguments setup
+    Efas(), // End function arguments setup
+    Pop(),  // pop from stack
     Add(),
     Sub(),
     Mul(),

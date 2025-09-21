@@ -50,6 +50,7 @@ pub fn main() -> Result<(), &'static str> {
         r#"
 fn main {
     let arr = [["Hello", 123], "World"];
+    let arr[0] = "Hello";
     return arr;
 } 
 "#
