@@ -8,6 +8,7 @@ on:
       - 'src/**'
       - '*.toml'
       - '*.sh'
+      - '.github/**'
 
   pull_request:
     branches: [ "master" ]
@@ -16,6 +17,7 @@ on:
       - 'src/**'
       - '*.toml'
       - '*.sh'
+      - '.github/**'
 
 env:
   CARGO_TERM_COLOR: always
