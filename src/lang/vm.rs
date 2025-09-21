@@ -1,11 +1,9 @@
+use crate::lang::ast::binop::AstBinopOp;
 use crate::lang::module::Module;
 use crate::lang::opcode::Opcode;
-use crate::lang::register::Register;
 use crate::lang::scope::Scope;
 use crate::lang::strong_u64::*;
 use crate::lang::value::*;
-use alloc::borrow::ToOwned;
-use alloc::format;
 use alloc::string::*;
 use alloc::vec::*;
 
@@ -17,7 +15,7 @@ pub struct VM<'a> {
     pub scopes: Vec<Scope>,
     pub error: String,
     pub zero: u64,
-    pub ret: Value
+    pub ret: Value,
 }
 
 impl<'a> VM<'a> {
@@ -30,7 +28,7 @@ impl<'a> VM<'a> {
             scopes: Vec::new(),
             error: String::new(),
             zero: 0,
-            ret: Value::Number(0.0)
+            ret: Value::Null(),
         };
     }
 
@@ -53,6 +51,55 @@ impl<'a> VM<'a> {
         return Err("cannot find entry function");
     }
 
+    fn compute_values(&mut self, left: Value, right: Value, op: AstBinopOp) -> Value {
+        match op {
+            AstBinopOp::PLUS => {
+                if let Value::Number(left_num) = left {
+                    if let Value::Number(right_num) = right {
+                        return Value::Number(left_num + right_num);
+                    }
+                }
+            }
+            AstBinopOp::MINUS => {
+                if let Value::Number(left_num) = left {
+                    if let Value::Number(right_num) = right {
+                        return Value::Number(left_num - right_num);
+                    }
+                }
+            }
+            AstBinopOp::MUL => {
+                if let Value::Number(left_num) = left {
+                    if let Value::Number(right_num) = right {
+                        return Value::Number(left_num * right_num);
+                    }
+                }
+            }
+            AstBinopOp::DIV => {
+                if let Value::Number(left_num) = left {
+                    if let Value::Number(right_num) = right {
+                        return Value::Number(left_num / right_num);
+                    }
+                }
+            }
+        }
+        self.error = "unmatched left and right value types".into();
+        return Value::Null();
+    }
+
+    fn compute_stack_values(&mut self, op: AstBinopOp) -> Value {
+        let mut left = Value::Null();
+        let mut right = Value::Null();
+
+        if let Some(value) = self.stack.pop() {
+            right = value;
+        }
+        if let Some(value) = self.stack.pop() {
+            left = value;
+        }
+
+        return self.compute_values(left, right, op);
+    }
+
     fn execute_opcode(&mut self, opcode: &Opcode) {
         match opcode {
             Opcode::Loadcn(value) => {
@@ -62,65 +109,29 @@ impl<'a> VM<'a> {
             Opcode::Loadv(name) => {
                 // do something with the clone here
                 if let Some(scope) = self.scopes.last() {
-                    if let Some(value) = scope.get(name.to_string()){
+                    if let Some(value) = scope.get(name.to_string()) {
                         self.stack.push(value.clone());
                     }
                 }
             }
             Opcode::Add() => {
-                let mut left: f64 = 0.;
-                let mut right: f64 = 0.;
-
-                if let Value::Number(num) = self.stack.pop().unwrap() {
-                    right = num;
-                }
-                if let Value::Number(num) = self.stack.pop().unwrap() {
-                    left = num;
-                }
-
-                self.stack.push(Value::Number(left + right));
+                let value = self.compute_stack_values(AstBinopOp::PLUS);
+                self.stack.push(value);
             }
             Opcode::Sub() => {
-                let mut left: f64 = 0.;
-                let mut right: f64 = 0.;
-
-                if let Value::Number(num) = self.stack.pop().unwrap() {
-                    right = num;
-                }
-                if let Value::Number(num) = self.stack.pop().unwrap() {
-                    left = num;
-                }
-
-                self.stack.push(Value::Number(left - right));
+                let value = self.compute_stack_values(AstBinopOp::MINUS);
+                self.stack.push(value);
             }
             Opcode::Mul() => {
-                let mut left: f64 = 0.;
-                let mut right: f64 = 0.;
-
-                if let Value::Number(num) = self.stack.pop().unwrap() {
-                    right = num;
-                }
-                if let Value::Number(num) = self.stack.pop().unwrap() {
-                    left = num;
-                }
-
-                self.stack.push(Value::Number(left * right));
+                let value = self.compute_stack_values(AstBinopOp::MUL);
+                self.stack.push(value);
             }
             Opcode::Div() => {
-                let mut left: f64 = 0.;
-                let mut right: f64 = 0.;
-
-                if let Value::Number(num) = self.stack.pop().unwrap() {
-                    right = num;
-                }
-                if let Value::Number(num) = self.stack.pop().unwrap() {
-                    left = num;
-                }
-
-                self.stack.push(Value::Number(left / right));
+                let value = self.compute_stack_values(AstBinopOp::DIV);
+                self.stack.push(value);
             }
             Opcode::Ret() => {
-                if !self.stack.is_empty(){
+                if !self.stack.is_empty() {
                     self.ret = self.stack.pop().unwrap();
                 }
 

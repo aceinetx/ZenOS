@@ -8,4 +8,5 @@ pub enum Value {
     Boolean(bool),
     Array(Vec<Value>),
     FunctionRef(u64),
+    Null()
 }
