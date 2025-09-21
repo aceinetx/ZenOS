@@ -40,7 +40,6 @@ impl<'a> Parser<'_> {
 
     fn next(&mut self) -> Token {
         let token = self.tokenizer.next();
-        //println!("next {:?}", token);
         self.current_token = token.clone();
         return token;
     }
@@ -57,11 +56,8 @@ impl<'a> Parser<'_> {
             token = self.current_token.clone();
         }
 
-        //println!("prec {}, token {:?}", min_prec, token);
-
         let mut left: Box<dyn node::Compile>;
 
-        //println!("MATCH {:?}", token);
         match token {
             Token::Operator(_) => {
                 let prec = self.get_token_precedence(&token).unwrap();
@@ -70,7 +66,6 @@ impl<'a> Parser<'_> {
                 match self.parse_expression(prec, false) {
                     Ok(node) => {
                         left = node;
-                        //println!("parsed, now {:?}", self.current_token);
                     }
                     Err(e) => {
                         return Err(e);
@@ -120,10 +115,8 @@ impl<'a> Parser<'_> {
                 left = Box::new(node);
 
                 self.next();
-                //println!("next {:?}", self.current_token);
             }
             Token::Lparen => {
-                //println!("lparen");
                 self.next();
                 match self.parse_expression(0, false) {
                     Ok(node) => {
@@ -191,7 +184,6 @@ impl<'a> Parser<'_> {
                 self.next();
             }
             _ => {
-                //println!("{:?}", token);
                 return Err("unexpected token in parse_expression");
             }
         }
@@ -199,7 +191,6 @@ impl<'a> Parser<'_> {
         loop {
             token = self.current_token.clone();
             if let Token::Operator(op) = token {
-                //println!("operator {:?}", token);
                 match self.get_token_precedence(&token) {
                     Some(prec) => {
                         if prec < min_prec {
