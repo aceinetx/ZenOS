@@ -49,12 +49,7 @@ pub fn main() -> Result<(), &'static str> {
     run_code(
         r#"
 fn main {
-    print("> ");
-    let str = get_string();
-    print("You typed: ");
-    print(str);
-    println("");
-    return 0;
+    return 69.123;
 } 
 "#
         .into(),

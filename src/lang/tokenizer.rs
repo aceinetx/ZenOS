@@ -1,4 +1,6 @@
 use alloc::string::*;
+use libm::pow;
+use uefi::println;
 
 #[derive(Debug, Clone)]
 pub enum Token {
@@ -44,18 +46,37 @@ impl Tokenizer {
 
     fn number(&mut self) -> Token {
         let mut num = 0.0;
+
+        let mut decimal_part = false;
+        let mut decmial_nums: u64 = 1;
+
         while self.pos < self.code.len() {
             let c = self.code.chars().nth(self.pos).unwrap();
-            if !self.is_digit(c) {
+            if c == '.' {
+                println!("int {}", num);
+                decimal_part = true;
+                self.pos += 1;
+                continue;
+            } else if !self.is_digit(c) {
                 break;
             }
 
-            num *= 10.0;
-            num += (c as u8 - '0' as u8) as f64;
+            if !decimal_part {
+                // int part
+                num *= 10.0;
+                num += (c as u8 - '0' as u8) as f64;
+            } else {
+                // decimal part
+                let digit = (c as u8 - '0' as u8) as f64;
+                let part = digit / (pow(10.0, decmial_nums as f64));
+                num += part;
+                decmial_nums += 1;
+            }
 
             self.pos += 1;
         }
 
+        println!("number {}", num);
         return Token::Number(num);
     }
 
