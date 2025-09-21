@@ -135,48 +135,11 @@ impl<'a> Parser<'_> {
             }
             Token::Identifier(name) => {
                 // function call
-                if matches!(self.tokenizer.peek(), Token::Lparen) {
-                    self.next();
+                let mut node = var_ref::AstVarRef::new();
+                node.name = name;
+                left = Box::new(node);
 
-                    let mut node = func_call::AstFuncCall::new();
-                    node.name = name;
-
-                    loop {
-                        self.next();
-                        if matches!(self.current_token, Token::Rparen) {
-                            break;
-                        }
-
-                        match self.parse_expression(0, false) {
-                            Err(e) => {
-                                return Err(e);
-                            }
-                            Ok(expr) => {
-                                node.args.push(expr);
-                            }
-                        }
-
-                        token = self.current_token.clone();
-                        if matches!(token, Token::Rparen) {
-                            break;
-                        }
-
-                        if !matches!(token, Token::Comma) {
-                            return Err(
-                                "expected `,` after a function argument: CALL(<args> [HERE])",
-                            );
-                        }
-                    }
-
-                    left = Box::new(node);
-                    self.next();
-                } else {
-                    let mut node = var_ref::AstVarRef::new();
-                    node.name = name;
-                    left = Box::new(node);
-
-                    self.next();
-                }
+                self.next();
             }
             Token::Null => {
                 let node = null::AstNull::new();
@@ -240,6 +203,37 @@ impl<'a> Parser<'_> {
                         left = Box::new(node);
                     }
                 }
+                self.next();
+            } else if let Token::Lparen = token {
+                let mut node = func_call::AstFuncCall::new();
+                node.reference = Some(left);
+
+                loop {
+                    self.next();
+                    if matches!(self.current_token, Token::Rparen) {
+                        break;
+                    }
+
+                    match self.parse_expression(0, false) {
+                        Err(e) => {
+                            return Err(e);
+                        }
+                        Ok(expr) => {
+                            node.args.push(expr);
+                        }
+                    }
+
+                    token = self.current_token.clone();
+                    if matches!(token, Token::Rparen) {
+                        break;
+                    }
+
+                    if !matches!(token, Token::Comma) {
+                        return Err("expected `,` after a function argument: CALL(<args> [HERE])");
+                    }
+                }
+
+                left = Box::new(node);
                 self.next();
             } else {
                 break;

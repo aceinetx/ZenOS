@@ -4,7 +4,7 @@ use alloc::string::*;
 use alloc::vec::*;
 
 pub struct AstFuncCall {
-    pub name: String,
+    pub reference: Option<Box<dyn Compile>>,
     pub args: Vec<Box<dyn Compile>>,
     do_push: bool,
 }
@@ -12,7 +12,7 @@ pub struct AstFuncCall {
 impl AstFuncCall {
     pub fn new() -> Self {
         return Self {
-            name: String::new(),
+            reference: None,
             args: Vec::new(),
             do_push: true,
         };
@@ -46,7 +46,20 @@ impl Compile for AstFuncCall {
         {
             let module = compiler.get_module();
             module.opcodes.push(Opcode::Efas());
-            module.opcodes.push(Opcode::Loadv(self.name.clone()));
+        }
+
+        {
+            if let Some(reference) = &mut self.reference {
+                if let Err(e) = reference.compile(compiler) {
+                    return Err(e);
+                }
+            } else {
+                return Err("reference is Null".into());
+            }
+        }
+
+        {
+            let module = compiler.get_module();
             module.opcodes.push(Opcode::Call());
             if self.do_push {
                 module.opcodes.push(Opcode::Pushret());

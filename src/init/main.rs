@@ -46,7 +46,25 @@ pub fn run_code(code: String) {
 }
 
 pub fn main() -> Result<(), &'static str> {
-    crate::lang::kernel_interpreter::kernel_interpreter();
+    run_code(
+        r#"
+    fn nop {
+        return Null;
+    }
+
+    fn msg {
+        println("is one");
+        return Null;
+    }
+
+    fn main {
+        let funcs = [nop, msg];
+        return funcs[1]();
+    }
+"#
+        .into(),
+    );
+    //crate::lang::kernel_interpreter::kernel_interpreter();
 
     Ok(())
 }
