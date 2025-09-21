@@ -10,16 +10,16 @@ pub enum AstBinopOp {
 }
 
 pub struct AstBinop {
-    pub a: Option<alloc::boxed::Box<dyn Compile>>,
-    pub b: Option<alloc::boxed::Box<dyn Compile>>,
+    pub left: Option<alloc::boxed::Box<dyn Compile>>,
+    pub right: Option<alloc::boxed::Box<dyn Compile>>,
     pub op: AstBinopOp,
 }
 
 impl AstBinop {
     pub fn new() -> Self {
         return Self {
-            a: None,
-            b: None,
+            left: None,
+            right: None,
             op: AstBinopOp::PLUS,
         };
     }
@@ -34,41 +34,41 @@ impl Compile for AstBinop {
         &mut self,
         compiler: &mut crate::lang::compiler::Compiler,
     ) -> Result<(), alloc::string::String> {
-        if let Some(left) = &mut self.a {
+        if let Some(left) = &mut self.left {
             if let Err(e) = left.compile(compiler) {
                 return Err(e);
             }
+        } else {
+            return Err("left is None".into());
         }
-        if let Some(right) = &mut self.b {
+        if let Some(right) = &mut self.right {
             if let Err(e) = right.compile(compiler) {
                 return Err(e);
             }
+        } else {
+            return Err("right is None".into());
         }
 
         let opcode;
-        let right = Register::R(compiler.registers.pop().unwrap());
-        let left_raw = compiler.registers.pop().unwrap();
-        let left = Register::R(left_raw);
 
-        compiler.registers.push(left_raw);
         match self.op {
             AstBinopOp::PLUS => {
-                opcode = Opcode::Add(left, right);
+                opcode = Opcode::Add();
             }
             AstBinopOp::MINUS => {
-                opcode = Opcode::Sub(left, right);
+                opcode = Opcode::Sub();
             }
             AstBinopOp::MUL => {
-                opcode = Opcode::Mul(left, right);
+                opcode = Opcode::Mul();
             }
             AstBinopOp::DIV => {
-                opcode = Opcode::Div(left, right);
+                opcode = Opcode::Div();
             }
         }
-        {
-            let module = compiler.get_module();
-            module.opcodes.push(opcode);
-        }
+
+        let module = compiler.get_module();
+        module.opcodes.push(opcode);
+
         Ok(())
     }
 }

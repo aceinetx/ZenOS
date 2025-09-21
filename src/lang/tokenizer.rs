@@ -4,6 +4,7 @@ use alloc::string::*;
 pub enum Token {
     Fn,
     Return,
+    Let,
     Number(f64),
     Identifier(String),
     String(String),
@@ -13,6 +14,7 @@ pub enum Token {
     Lparen,
     Rparen,
     Semicolon,
+    Assign,
     EOF,
 }
 
@@ -85,6 +87,8 @@ impl Tokenizer {
                         token = Token::Fn;
                     } else if name == "return" {
                         token = Token::Return;
+                    } else if name == "let" {
+                        token = Token::Let;
                     }
                 }
                 return token;
@@ -106,6 +110,9 @@ impl Tokenizer {
             } else if c == ')' {
                 self.pos += 1;
                 return Token::Rparen;
+            } else if c == '=' {
+                self.pos += 1;
+                return Token::Assign;
             }
             self.pos += 1;
         }

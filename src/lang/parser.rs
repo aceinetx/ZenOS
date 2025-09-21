@@ -1,8 +1,6 @@
 use crate::lang::ast::*;
-use crate::lang::tokenizer;
 use crate::lang::tokenizer::*;
 use alloc::boxed::*;
-use alloc::vec;
 use alloc::vec::*;
 use uefi::println;
 
@@ -105,6 +103,13 @@ impl<'a> Parser<'_> {
                     }
                 }
             }
+            Token::Identifier(name) => {
+                let mut node = var_ref::AstVarRef::new();
+                node.name = name;
+                left = Box::new(node);
+
+                self.next();
+            }
             _ => {
                 //println!("{:?}", token);
                 return Err("unexpected token in parse_expression");
@@ -131,8 +136,8 @@ impl<'a> Parser<'_> {
                             }
                             Ok(right) => {
                                 let mut binop = binop::AstBinop::new();
-                                binop.a = Some(left);
-                                binop.b = Some(right);
+                                binop.left = Some(left);
+                                binop.right = Some(right);
                                 if op == '+' {
                                     binop.op = binop::AstBinopOp::PLUS;
                                 } else if op == '-' {
@@ -159,7 +164,7 @@ impl<'a> Parser<'_> {
     }
 
     pub fn parse_statement(&mut self) -> Result<Option<Box<dyn node::Compile>>, &'static str> {
-        let token = self.next();
+        let token = self.current_token.clone();
 
         match token {
             Token::Return => match self.parse_expression(0, true) {
@@ -167,17 +172,48 @@ impl<'a> Parser<'_> {
                     return Err(e);
                 }
                 Ok(node) => {
+                    if !matches!(self.current_token, Token::Semicolon) {
+                        return Err("expected semicolon after return");
+                    }
+
                     let mut ret = ret::AstReturn::new();
                     ret.value = Some(node);
                     return Ok(Some(Box::new(ret)));
                 }
             },
+            Token::Let => {
+                let mut node = var_assign::AstAssign::new();
+
+                if let Token::Identifier(name) = self.next() {
+                    node.name = name;
+                } else {
+                    return Err("expected identifier after let");
+                }
+
+                if !matches!(self.next(), Token::Assign) {
+                    return Err("expected `=` after let <ident>");
+                }
+
+                match self.parse_expression(0, true) {
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    Ok(expr) => {
+                        if !matches!(self.current_token, Token::Semicolon) {
+                            return Err("expected semicolon after return");
+                        }
+
+                        node.expr = Some(expr);
+                        return Ok(Some(Box::new(node)));
+                    }
+                }
+            }
             Token::Semicolon => {
                 return Ok(None);
             }
             _ => {
                 println!("{:?}", token);
-                return Err("unexpected token");
+                return Err("unexpected statement token");
             }
         }
         //return Err("parse_statement did not parse any of the above statements");
@@ -187,6 +223,11 @@ impl<'a> Parser<'_> {
         let mut vec: Vec<Box<dyn node::Compile>> = Vec::new();
 
         loop {
+            self.next();
+            if matches!(self.current_token, Token::Rbrace) {
+                break;
+            }
+
             match self.parse_statement() {
                 Err(e) => {
                     return Err(e);
@@ -196,11 +237,6 @@ impl<'a> Parser<'_> {
                         vec.push(node);
                     }
                 }
-            }
-
-            let token = self.next();
-            if matches!(token, Token::Rbrace) {
-                break;
             }
         }
 

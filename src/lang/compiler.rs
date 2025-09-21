@@ -8,7 +8,6 @@ pub struct Compiler<'a> {
     parser: &'a mut Parser<'a>,
     module: Module,
     pub registers: Vec<u8>,
-    register_index: u8,
 }
 
 impl<'a> Compiler<'_> {
@@ -17,19 +16,9 @@ impl<'a> Compiler<'_> {
             parser: parser,
             module: Module::new(),
             registers: Vec::new(),
-            register_index: 0,
         };
 
         return inst;
-    }
-
-    pub fn get_new_register(&mut self) -> u8 {
-        self.register_index += 1;
-        if self.register_index > 127 {
-            self.register_index = 0;
-        }
-
-        return self.register_index;
     }
 
     pub fn get_module(&mut self) -> &mut Module {

@@ -32,7 +32,7 @@ pub fn main() -> Result<(), &'static str> {
                 break;
             }
         }
-        println!("r0: {}", vm.registers[0]);
+        println!("ret: {:?}", vm.ret);
     }
 
     Ok(())

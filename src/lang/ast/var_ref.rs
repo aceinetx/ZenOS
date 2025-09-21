@@ -1,4 +1,4 @@
-use crate::lang::ast::node::Compile;
+use crate::lang::{ast::node::Compile, opcode::Opcode};
 use alloc::string::*;
 use alloc::vec::*;
 
@@ -21,8 +21,10 @@ impl Compile for AstVarRef {
 
     fn compile(
         &mut self,
-        _compiler: &mut crate::lang::compiler::Compiler,
+        compiler: &mut crate::lang::compiler::Compiler,
     ) -> Result<(), alloc::string::String> {
+        let module = compiler.get_module();
+        module.opcodes.push(Opcode::Loadv(self.name.clone()));
         Ok(())
     }
 }

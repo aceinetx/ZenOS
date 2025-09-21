@@ -1,6 +1,5 @@
 use crate::lang::ast::node::Compile;
 use crate::lang::opcode::Opcode;
-use crate::lang::register::Register;
 use alloc::vec::*;
 
 pub struct AstReturn {
@@ -31,16 +30,8 @@ impl Compile for AstReturn {
                     return Err(e);
                 }
 
-                let register: u8;
-                {
-                    register = compiler.registers.pop().unwrap();
-                }
-
                 {
                     let module = compiler.get_module();
-                    module
-                        .opcodes
-                        .push(Opcode::Mov(Register::R(0), Register::R(register)));
                     module.opcodes.push(Opcode::Ret());
                 }
             }

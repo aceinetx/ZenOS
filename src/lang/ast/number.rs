@@ -22,21 +22,8 @@ impl Compile for AstNumber {
         &mut self,
         compiler: &mut crate::lang::compiler::Compiler,
     ) -> Result<(), alloc::string::String> {
-        let opcode: Opcode;
-        let register: u8;
-        {
-            register = compiler.get_new_register();
-            opcode = Opcode::MovIMM(Register::R(register), self.number as u64);
-        }
-
-        {
-            let module = compiler.get_module();
-            module.opcodes.push(opcode);
-        }
-
-        {
-            compiler.registers.push(register);
-        }
+        let module = compiler.get_module();
+        module.opcodes.push(Opcode::Loadcn(self.number));
 
         Ok(())
     }

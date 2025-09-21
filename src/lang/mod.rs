@@ -4,6 +4,8 @@ pub mod module;
 pub mod opcode;
 pub mod parser;
 pub mod register;
+pub mod scope;
 pub mod strong_u64;
 pub mod tokenizer;
+pub mod value;
 pub mod vm;
