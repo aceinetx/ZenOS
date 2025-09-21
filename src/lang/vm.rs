@@ -72,6 +72,15 @@ impl<'a> VM<'a> {
             Opcode::Add(dest, src) => {
                 *self.get_register_mut(&dest) += *self.get_register(src);
             }
+            Opcode::Sub(dest, src) => {
+                *self.get_register_mut(&dest) -= *self.get_register(src);
+            }
+            Opcode::Mul(dest, src) => {
+                *self.get_register_mut(&dest) *= *self.get_register(src);
+            }
+            Opcode::Div(dest, src) => {
+                *self.get_register_mut(&dest) /= *self.get_register(src);
+            }
             Opcode::Ret() => {
                 if !self.stack.is_empty() {
                     self.pc = self.stack.pop().unwrap();

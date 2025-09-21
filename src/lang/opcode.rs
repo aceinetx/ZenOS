@@ -8,5 +8,8 @@ pub enum Opcode {
     Mov(Register, Register),
     MovIMM(Register, u64),
     Add(Register, Register),
+    Sub(Register, Register),
+    Mul(Register, Register),
+    Div(Register, Register),
     Ret(),
 }

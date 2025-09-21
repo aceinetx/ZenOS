@@ -20,16 +20,11 @@ pub enum Token {
 pub struct Tokenizer {
     code: String,
     pos: usize,
-    pub current_token: Token,
 }
 
 impl Tokenizer {
     pub fn new(code: String) -> Tokenizer {
-        return Tokenizer {
-            code: code,
-            pos: 0,
-            current_token: Token::EOF,
-        };
+        return Tokenizer { code: code, pos: 0 };
     }
 
     fn is_digit(&self, ch: char) -> bool {

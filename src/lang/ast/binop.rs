@@ -45,19 +45,29 @@ impl Compile for AstBinop {
             }
         }
 
+        let opcode;
+        let right = Register::R(compiler.registers.pop().unwrap());
+        let left_raw = compiler.registers.pop().unwrap();
+        let left = Register::R(left_raw);
+
+        compiler.registers.push(left_raw);
         match self.op {
             AstBinopOp::PLUS => {
-                let right = Register::R(compiler.registers.pop().unwrap());
-                let left_raw = compiler.registers.pop().unwrap();
-                let left = Register::R(left_raw);
-                let opcode = Opcode::Add(left, right);
-                {
-                    let module = compiler.get_module();
-                    module.opcodes.push(opcode);
-                }
-                compiler.registers.push(left_raw);
+                opcode = Opcode::Add(left, right);
             }
-            _ => {}
+            AstBinopOp::MINUS => {
+                opcode = Opcode::Sub(left, right);
+            }
+            AstBinopOp::MUL => {
+                opcode = Opcode::Mul(left, right);
+            }
+            AstBinopOp::DIV => {
+                opcode = Opcode::Div(left, right);
+            }
+        }
+        {
+            let module = compiler.get_module();
+            module.opcodes.push(opcode);
         }
         Ok(())
     }

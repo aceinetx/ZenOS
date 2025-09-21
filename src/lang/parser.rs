@@ -43,6 +43,7 @@ impl<'a> Parser<'_> {
 
     fn next(&mut self) -> Token {
         let token = self.tokenizer.next();
+        //println!("next {:?}", token);
         self.current_token = token.clone();
         return token;
     }
@@ -50,26 +51,29 @@ impl<'a> Parser<'_> {
     pub fn parse_expression(
         &mut self,
         min_prec: i32,
+        initial: bool,
     ) -> Result<Box<dyn node::Compile>, &'static str> {
         let mut token;
-        if min_prec == 0 {
+        if initial {
             token = self.next();
         } else {
             token = self.current_token.clone();
         }
 
-        println!("prec {}, token {:?}", min_prec, token);
+        //println!("prec {}, token {:?}", min_prec, token);
 
         let mut left: Box<dyn node::Compile>;
 
+        //println!("MATCH {:?}", token);
         match token {
-            Token::Operator(op) => {
+            Token::Operator(_) => {
                 let prec = self.get_token_precedence(&token).unwrap();
-                self.current_token = self.next();
 
-                match self.parse_expression(prec) {
+                self.next();
+                match self.parse_expression(prec, false) {
                     Ok(node) => {
                         left = node;
+                        //println!("parsed, now {:?}", self.current_token);
                     }
                     Err(e) => {
                         return Err(e);
@@ -81,28 +85,36 @@ impl<'a> Parser<'_> {
                 node.number = num;
                 left = Box::new(node);
 
-                token = self.next();
+                self.next();
+                //println!("next {:?}", self.current_token);
             }
-            Token::Lparen => match self.parse_expression(0) {
-                Ok(node) => {
-                    left = node;
-                    if !matches!(token, Token::Rparen) {
-                        return Err("expected `)`");
+            Token::Lparen => {
+                //println!("lparen");
+                self.next();
+                match self.parse_expression(0, false) {
+                    Ok(node) => {
+                        left = node;
+                        token = self.current_token.clone();
+                        if !matches!(token, Token::Rparen) {
+                            return Err("expected `)`");
+                        }
+                        self.next();
+                    }
+                    Err(e) => {
+                        return Err(e);
                     }
                 }
-                Err(e) => {
-                    return Err(e);
-                }
-            },
+            }
             _ => {
-                println!("{:?}", token);
+                //println!("{:?}", token);
                 return Err("unexpected token in parse_expression");
             }
         }
 
         loop {
             token = self.current_token.clone();
-            if let Token::Operator(_) = token {
+            if let Token::Operator(op) = token {
+                //println!("operator {:?}", token);
                 match self.get_token_precedence(&token) {
                     Some(prec) => {
                         if prec < min_prec {
@@ -113,26 +125,24 @@ impl<'a> Parser<'_> {
                         // right assoc: next_min = prec
                         // left assoc: next_min = prec + 1
                         let next_min = prec + 1;
-                        match self.parse_expression(next_min) {
+                        match self.parse_expression(next_min, false) {
                             Err(e) => {
                                 return Err(e);
                             }
                             Ok(right) => {
-                                if let Token::Operator(op) = token {
-                                    let mut binop = binop::AstBinop::new();
-                                    binop.a = Some(left);
-                                    binop.b = Some(right);
-                                    if op == '+' {
-                                        binop.op = binop::AstBinopOp::PLUS;
-                                    } else if op == '-' {
-                                        binop.op = binop::AstBinopOp::MINUS;
-                                    } else if op == '*' {
-                                        binop.op = binop::AstBinopOp::MUL;
-                                    } else if op == '/' {
-                                        binop.op = binop::AstBinopOp::DIV;
-                                    }
-                                    left = Box::new(binop);
+                                let mut binop = binop::AstBinop::new();
+                                binop.a = Some(left);
+                                binop.b = Some(right);
+                                if op == '+' {
+                                    binop.op = binop::AstBinopOp::PLUS;
+                                } else if op == '-' {
+                                    binop.op = binop::AstBinopOp::MINUS;
+                                } else if op == '*' {
+                                    binop.op = binop::AstBinopOp::MUL;
+                                } else if op == '/' {
+                                    binop.op = binop::AstBinopOp::DIV;
                                 }
+                                left = Box::new(binop);
                             }
                         }
                     }
@@ -152,7 +162,7 @@ impl<'a> Parser<'_> {
         let token = self.next();
 
         match token {
-            Token::Return => match self.parse_expression(0) {
+            Token::Return => match self.parse_expression(0, true) {
                 Err(e) => {
                     return Err(e);
                 }
@@ -188,7 +198,7 @@ impl<'a> Parser<'_> {
                 }
             }
 
-            let token = self.tokenizer.next();
+            let token = self.next();
             if matches!(token, Token::Rbrace) {
                 break;
             }
@@ -198,12 +208,12 @@ impl<'a> Parser<'_> {
     }
 
     pub fn parse_function(&mut self) -> Result<(), &'static str> {
-        let token = self.tokenizer.next();
+        let token = self.next();
         if let Token::Identifier(name) = token {
             let mut function = function::AstFunction::new();
             function.name = name;
 
-            if !matches!(self.tokenizer.next(), Token::Lbrace) {
+            if !matches!(self.next(), Token::Lbrace) {
                 return Err("expected `{` after fn");
             }
 
@@ -226,7 +236,7 @@ impl<'a> Parser<'_> {
     pub fn parse(&mut self) -> Result<(), &'static str> {
         self.root = root::AstRoot::new();
 
-        let mut token = self.tokenizer.next();
+        let mut token = self.next();
         while !matches!(token, Token::EOF) {
             println!("tkn: {:?}", token);
             match token {
@@ -237,7 +247,7 @@ impl<'a> Parser<'_> {
                 }
                 _ => {}
             }
-            token = self.tokenizer.next();
+            token = self.next();
         }
         Ok(())
     }
