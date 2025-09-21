@@ -1,4 +1,4 @@
-use crate::lang::ast::node::Compile;
+use crate::lang::{ast::node::Compile, opcode::Opcode};
 use alloc::string::String;
 use alloc::vec::*;
 
@@ -33,7 +33,8 @@ impl Compile for AstAssign {
             return Err("expr is None".into());
         }
 
-        let _module = compiler.get_module();
+        let module = compiler.get_module();
+        module.opcodes.push(Opcode::Storev(self.name.clone()));
 
         Ok(())
     }

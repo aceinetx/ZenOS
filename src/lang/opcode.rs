@@ -5,6 +5,7 @@ use bincode::*;
 pub enum Opcode {
     Loadcn(f64),
     Loadv(String),
+    Storev(String),
     Add(),
     Sub(),
     Mul(),

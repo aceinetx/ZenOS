@@ -4,6 +4,7 @@ use crate::lang::opcode::Opcode;
 use crate::lang::scope::Scope;
 use crate::lang::strong_u64::*;
 use crate::lang::value::*;
+use alloc::format;
 use alloc::string::*;
 use alloc::vec::*;
 
@@ -109,9 +110,27 @@ impl<'a> VM<'a> {
             Opcode::Loadv(name) => {
                 // do something with the clone here
                 if let Some(scope) = self.scopes.last() {
-                    if let Some(value) = scope.get(name.to_string()) {
+                    if let Some(value) = scope.get(name) {
                         self.stack.push(value.clone());
+                        return;
                     }
+                }
+                self.error = format!("unknown variable: {}", name);
+            }
+            Opcode::Storev(name) => {
+                // do something with the clone here
+                if let Some(store_value) = self.stack.pop() {
+                    if let Some(scope) = self.scopes.last_mut() {
+                        scope.create_if_doesnt_exist(name);
+                        if let Some(value) = scope.get_mut(name) {
+                            *value = store_value;
+                            return;
+                        }
+                    } else {
+                        self.error = format!("storev failed: scopes is empty");
+                    }
+                } else {
+                    self.error = format!("storev failed: no value in stack");
                 }
             }
             Opcode::Add() => {
