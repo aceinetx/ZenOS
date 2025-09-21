@@ -1,6 +1,5 @@
 use crate::lang::{ast::node::Compile, opcode::Opcode};
 use alloc::boxed::*;
-use alloc::string::*;
 use alloc::vec::*;
 
 pub struct AstFuncCall {
