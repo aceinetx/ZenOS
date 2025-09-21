@@ -31,14 +31,15 @@ pub fn kernel_interpreter() {
 
         vm.error.clear();
         for opcode in module.opcodes.iter() {
+            if matches!(opcode, Opcode::Ret()) {
+                println!("returned {}", vm.stack.pop().unwrap());
+                break;
+            }
+
             vm.execute_opcode(opcode);
             if !vm.error.is_empty() {
                 println!("runtime error: {}", vm.error);
                 break;
-            }
-
-            if matches!(opcode, Opcode::Ret()) {
-                println!("returned {}", vm.ret);
             }
         }
     }

@@ -46,16 +46,7 @@ pub fn run_code(code: String) {
 }
 
 pub fn main() -> Result<(), &'static str> {
-    run_code(
-        r#"
-fn main {
-    let arr = [["Hello", 123], "World"];
-    let arr[0] = "Hello";
-    return arr;
-} 
-"#
-        .into(),
-    );
+    crate::lang::kernel_interpreter::kernel_interpreter();
 
     Ok(())
 }
