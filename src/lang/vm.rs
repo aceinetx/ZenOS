@@ -19,7 +19,6 @@ pub struct VM<'a> {
     pub call_stack: Vec<u64>,
     pub scopes: Vec<Scope>,
     pub error: String,
-    pub zero: u64,
     pub ret: Value,
     bfas_stack_start: i64,
     bfas_stack_end: i64,
@@ -34,7 +33,6 @@ impl<'a> VM<'a> {
             call_stack: Vec::new(),
             scopes: Vec::new(),
             error: String::new(),
-            zero: 0,
             ret: Value::Null(),
             bfas_stack_start: 0,
             bfas_stack_end: 0,
@@ -292,7 +290,6 @@ impl<'a> VM<'a> {
     }
 
     pub fn step(&mut self) -> bool {
-        self.zero = 0;
         if !self.error.is_empty() {
             return false;
         }

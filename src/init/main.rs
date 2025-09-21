@@ -48,8 +48,18 @@ pub fn run_code(code: String) {
 pub fn main() -> Result<(), &'static str> {
     run_code(
         r#"
+fn prompt {
+    print("> ");
+    let s = get_string();
+    print("You typed: ");
+    print(s);
+    println("");
+}
+
 fn main {
-    return Null + 1;
+    prompt();
+    main();
+    return Null;
 } 
 "#
         .into(),
