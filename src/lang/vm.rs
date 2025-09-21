@@ -84,6 +84,10 @@ impl<'a> VM<'a> {
             AstBinopOp::DIV => {
                 if let Value::Number(left_num) = left {
                     if let Value::Number(right_num) = right {
+                        if right_num == 0.0 {
+                            self.error = "division by 0".into();
+                            return Value::Null();
+                        }
                         return Value::Number(left_num / right_num);
                     }
                 }
