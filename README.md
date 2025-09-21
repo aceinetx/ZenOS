@@ -5,13 +5,10 @@ x64 uefi rust operating system centered around it's own language
 > Designs below are not fully implemented, they are concepts and can change in the future !
 
 ## Design of ZenOS
-
-Bottom layer: Rust kernel
-
-Middle layer: ZenLang Virtual Machine
-
-Top layer: ZenLang
-
+### Layers
+- Bottom: Rust kernel
+- Middle: ZenLang Virtual Machine
+- Top: ZenLang
 
 The lower the level, the more control over system you have.
 
@@ -37,7 +34,7 @@ Loadcn(5),
 Loadcn(5),
 Add(),
 ```
-Add() instruction pops two numbers loaded by Loadcn() and adds them together, then pushes the result to the stack
+Add() instruction pops two numbers loaded by `Loadcn()` and adds them together, then pushes the result to the stack
 
 Here's another example:
 ```
@@ -51,10 +48,10 @@ This divides the loaded variable `var` by two. Does not affect the actual value 
 ZenLang VM has 2 stacks:
 - Main stack
   - Contains values that can either be a Number, String, Boolean, FunctionRef, etc...
-  - Affected by: Loadcn, Loadcnu, Loadcs, Loadv, Storev, etc...
+  - Affected by: `Loadcn`, `Loadcnu`, `Loadcs`, `Loadv`, `Storev`, etc...
 - Call stack (or return stack)
   - Contains saved program counter by call. Pop'ed on Ret instruction
-  - Affected by: Call, Ret
+  - Affected by: `Call`, `Ret`
 
 ### Program counter
 As you may know, ZenLang has a concept called modules, which can dynamically loaded at runtime
@@ -72,8 +69,8 @@ let opcode = self.modules[self.pc.get_high()].opcodes[self.pc.get_low()]
 ### Scopes
 Scopes are embedded into ZenLang VM, which is why we have instructions like Loadv and Storev
 
-Scopes are created on Call()
+Scopes are created on `Call()`
 
-Last scope is destroyed on Ret()
+Last scope is destroyed on `Ret()`
 
-Loadv and Storev only load/store variables from the last scope. They can't access other scopes
+`Loadv` and `Storev` only load/store variables from the last scope. They can't access other scopes
