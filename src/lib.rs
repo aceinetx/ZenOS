@@ -1,5 +1,6 @@
 #![no_main]
 #![no_std]
+pub mod fs;
 pub mod globals;
 pub mod init;
 pub mod io;
