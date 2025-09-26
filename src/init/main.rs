@@ -2,9 +2,7 @@ use crate::lang::Platform;
 use alloc::boxed::*;
 use alloc::string::*;
 use uefi::*;
-use zenlang::{
-    compiler, parser, stdlib::compile_stdlib_module, strong_u64::U64BitsControl, tokenizer, vm,
-};
+use zenlang::{compiler, parser, strong_u64::U64BitsControl, tokenizer, vm};
 
 pub fn run_code(code: String) {
     let mut tokenizer = tokenizer::Tokenizer::new(code);
@@ -19,7 +17,6 @@ pub fn run_code(code: String) {
 
     // get modules
     let module = compiler.get_module();
-    let mut stdlib = compile_stdlib_module();
 
     // create VM
     let mut vm = vm::VM::new();
@@ -27,10 +24,10 @@ pub fn run_code(code: String) {
     vm.platform = Some(Box::new(Platform::new()));
 
     // load modules
-    vm.load_module(module);
-    vm.load_module(&mut stdlib);
-
-    //println!("{:?}", vm.modules);
+    if let Err(e) = vm.load_module(module) {
+        println!("{}", e);
+        return;
+    }
 
     if let Err(e) = vm.set_entry_function("main") {
         println!("unresolved symbol main: {}", e);
@@ -58,9 +55,10 @@ pub fn run_code(code: String) {
 pub fn main() -> Result<(), &'static str> {
     run_code(
         r#"
-    fn main {
-        return println;
-    }
+mod stdlib;
+fn main {
+    return println;
+}
 "#
         .into(),
     );
