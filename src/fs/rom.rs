@@ -7,12 +7,43 @@ use zenlang::tokenizer;
 
 static SHELL_ZENLANG_CODE: &'static str = r#"
 mod stdlib;
+mod zenos;
+
+fn execute line {
+    if line == "" {
+        return null;
+    }
+    let splitted = str_split(line, " ");
+
+    let command = splitted[0];
+    if command == "hello" {
+        println("hi there!");
+    } elif command == "ver" {
+        ver();
+    } else {
+        println("unknown command");
+    }
+    return null;
+}
 
 fn main {
     while true {
         print("> ");
         let s = get_string();
+        execute(s);
     }
+    return null;
+}
+"#;
+static ZENOS_ZENLANG_CODE: &'static str = r#"
+mod stdlib;
+fn ver {
+    println("ZenOS nightly");
+    println("ZenLang nightly");
+    println("ZenLang constants:");
+    print("MAX_STACK_SIZE = ");
+    println(_vmcall_ret_unsafe_1(50));
+    return null;
 }
 "#;
 
@@ -42,6 +73,10 @@ fn compile_code_into(code: String, module_name: String, out: String) {
         Ok(bytes) => {
             //
             if let Some(fs) = get_fs() {
+                if let Err(e) = fs.create_file(out.clone()) {
+                    println!("[rom] /bin/shell.zenc: {}", e);
+                    return;
+                }
                 if let Err(e) = fs.write_file(out, bytes) {
                     println!("[rom] write error: {}", e);
                     return;
@@ -62,14 +97,15 @@ pub fn set_rom() {
             println!("[rom] /bin: {}", e);
         }
 
-        if let Err(e) = fs.create_file("/bin/shell.zenc".into()) {
-            println!("[rom] /bin/shell.zenc: {}", e);
-        }
-        println!("{:?}", fs);
         compile_code_into(
             SHELL_ZENLANG_CODE.into(),
             "zenshell".into(),
             "/bin/shell.zenc".into(),
+        );
+        compile_code_into(
+            ZENOS_ZENLANG_CODE.into(),
+            "zenos".into(),
+            "/lib/zenos.zenc".into(),
         );
     }
 }

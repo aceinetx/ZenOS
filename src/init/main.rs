@@ -4,12 +4,12 @@ use alloc::string::*;
 use uefi::println;
 use zenlang::module::Module;
 
-pub fn main() -> Result<(), String> {
-    let mut process_manager = ProcessManager::new();
-
-    // load shell
+pub fn run_zenc_process_manager(
+    process_manager: &mut ProcessManager,
+    path: &str,
+) -> Result<(), String> {
     if let Some(fs) = get_fs() {
-        match fs.read_file("/bin/shell.zenc".into()) {
+        match fs.read_file(path.into()) {
             Ok(bytes) => {
                 let mut module = Module::new();
                 if let Err(e) = module.load(bytes) {
@@ -26,6 +26,7 @@ pub fn main() -> Result<(), String> {
                 }
 
                 process_manager.append_process(process);
+                return Ok(());
             }
             Err(e) => {
                 return Err(e.into());
@@ -34,7 +35,14 @@ pub fn main() -> Result<(), String> {
     } else {
         return Err("get_fs failed".into());
     }
+}
 
+pub fn main() -> Result<(), String> {
+    let mut process_manager = ProcessManager::new();
+
+    if let Err(e) = run_zenc_process_manager(&mut process_manager, "/bin/shell.zenc") {
+        return Err(e);
+    }
     println!("[main] shell loading successful");
 
     // step all processes

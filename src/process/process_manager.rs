@@ -44,14 +44,16 @@ impl ProcessManager {
                     println!("runtime error at pc = {}:{}", pc.get_low(), pc.get_high(),);
                     println!("-- end runtime error --");
                 } else {
-                    println!("{} returned {}", process.pid, process.vm.ret);
+                    println!("pid {} returned {}", process.pid, process.vm.ret);
                 }
             }
         }
     }
 
     pub fn remove_stalling_processes(&mut self) {
-        for i in 0..self.processes.len() {
+        let mut i: usize = self.processes.len();
+        while i > 0 {
+            i -= 1;
             if self.processes[i].stalling {
                 self.processes.remove(i);
             }
