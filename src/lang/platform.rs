@@ -1,5 +1,6 @@
 use crate::io::get_string;
 use alloc::string::*;
+use alloc::vec::*;
 use uefi::print;
 use zenlang::module::Module;
 use zenlang::platform;
@@ -28,4 +29,8 @@ impl platform::Platform for Platform {
         }
         return None;
     }
+    fn read_file_bytes(&self, _name: String) -> Option<Vec<u8>> {
+        return None;
+    }
+    fn write_file_bytes(&self, _name: String, _bytes: Vec<u8>) {}
 }
