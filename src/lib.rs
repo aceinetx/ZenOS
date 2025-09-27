@@ -6,5 +6,6 @@ pub mod init;
 pub mod io;
 pub mod lang;
 pub mod mem;
+pub mod process;
 pub mod text;
 extern crate alloc;

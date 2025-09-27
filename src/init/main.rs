@@ -1,67 +1,45 @@
-use crate::lang::Platform;
-use alloc::boxed::*;
+use crate::fs::global::get_fs;
+use crate::process::*;
 use alloc::string::*;
-use uefi::*;
-use zenlang::{compiler, parser, strong_u64::U64BitsControl, tokenizer, vm};
+use uefi::println;
+use zenlang::module::Module;
 
-pub fn run_code(code: String) {
-    let mut tokenizer = tokenizer::Tokenizer::new(code);
-    let mut parser = parser::Parser::new(&mut tokenizer);
-    let mut compiler = compiler::Compiler::new(&mut parser);
+pub fn main() -> Result<(), String> {
+    let mut process_manager = ProcessManager::new();
 
-    // compile the code
-    if let Err(e) = compiler.compile() {
-        println!("compilation error: {}", e);
-        return;
-    }
+    // load shell
+    if let Some(fs) = get_fs() {
+        match fs.read_file("/bin/shell.zenc".into()) {
+            Ok(bytes) => {
+                let mut module = Module::new();
+                if let Err(e) = module.load(bytes) {
+                    return Err(e.to_string());
+                }
 
-    // get modules
-    let module = compiler.get_module();
+                let mut process = Process::new();
+                if let Err(e) = process.vm.load_module(&module) {
+                    return Err(e);
+                }
 
-    // create VM
-    let mut vm = vm::VM::new();
-    // set the platform
-    vm.platform = Some(Box::new(Platform::new()));
+                if let Err(e) = process.vm.set_entry_function("main") {
+                    return Err(e.into());
+                }
 
-    // load modules
-    if let Err(e) = vm.load_module(module) {
-        println!("{}", e);
-        return;
-    }
-
-    if let Err(e) = vm.set_entry_function("main") {
-        println!("unresolved symbol main: {}", e);
-        return;
-    }
-
-    loop {
-        if !vm.step() {
-            break;
+                process_manager.append_process(process);
+            }
+            Err(e) => {
+                return Err(e.into());
+            }
         }
+    } else {
+        return Err("get_fs failed".into());
     }
-    if !vm.error.is_empty() {
-        println!("\n-- begin runtime error --");
-        println!(
-            "runtime error at pc = {}: {}",
-            vm.pc.get_low() - 1,
-            vm.error
-        );
-        println!("-- end runtime error --");
-        return;
+
+    println!("[main] shell loading successful");
+
+    // step all processes
+    loop {
+        process_manager.step_all();
+        process_manager.remove_stalling_processes();
     }
-    println!("returned {}", vm.ret);
-}
-
-pub fn main() -> Result<(), &'static str> {
-    run_code(
-        r#"
-mod stdlib;
-fn main {
-    return println;
-}
-"#
-        .into(),
-    );
-
-    Ok(())
 }

@@ -1,4 +1,5 @@
 use crate::fs::global::*;
+use crate::fs::rom::*;
 use crate::init::*;
 use crate::mem::shared_alloc::*;
 use crate::text;
@@ -23,6 +24,9 @@ pub fn init() -> Result<(), &'static str> {
     if let Err(e) = create_fs() {
         return Err(e);
     }
+
+    println!("[init] Initializing default rom...");
+    set_rom();
 
     println!("[init] Calling main procedure");
     if let Err(e) = main() {
